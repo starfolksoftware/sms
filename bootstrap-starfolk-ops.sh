@@ -64,14 +64,17 @@ ensure_owner() {
 say(){ printf "==> %s\n" "$*"; }
 
 # ---------- Project (v2) ----------
-# Get project number by parsing plaintext view (avoids JSON flags)
+# Determine project number by listing projects (works across gh versions)
 project_number_by_title() {
   local owner="$1" title="$2"
-  # `gh project view` exits non-zero if not found
-  if gh project view --owner "$owner" "$title" >/tmp/.proj.$$ 2>/dev/null; then
-    sed -n 's/^Number:[[:space:]]*\([0-9][0-9]*\).*$/\1/p' /tmp/.proj.$$
-  else
-    echo ""
+  local list line num
+  list="$(gh project list --owner "$owner" 2>/dev/null || true)"
+  # Try to find line containing exact title (fallback to substring)
+  line="$(printf "%s\n" "$list" | awk -v t="$title" 'index($0,t)>0 {print; exit}')"
+  if [[ -n "$line" ]]; then
+    # Assume number appears at start of line or just after optional spaces
+    num="$(printf "%s" "$line" | grep -Eo '^[[:space:]]*[0-9]+' | tr -d ' ')"
+    [[ -n "$num" ]] && echo "$num"
   fi
 }
 
@@ -81,11 +84,18 @@ ensure_project() {
   local pn
   pn="$(project_number_by_title "$OWNER" "$PROJECT_TITLE")"
   if [[ -z "$pn" ]]; then
-    # Create, then re-fetch number
-    gh project create --owner "$OWNER" --title "$PROJECT_TITLE" >/dev/null
-    pn="$(project_number_by_title "$OWNER" "$PROJECT_TITLE")"
+    # Create project and parse number directly from output (URL or mention)
+    local create_out
+    create_out="$(gh project create --owner "$OWNER" --title "$PROJECT_TITLE" 2>&1 || true)"
+    pn="$(printf "%s\n" "$create_out" | grep -Eo 'projects/[0-9]+' | grep -Eo '[0-9]+' | head -n1)"
     if [[ -z "$pn" ]]; then
-      echo "Could not determine Project number after creation."
+      # Fallback: list again
+      pn="$(project_number_by_title "$OWNER" "$PROJECT_TITLE")"
+    fi
+    if [[ -z "$pn" ]]; then
+      echo "Could not determine Project number after creation." >&2
+      echo "gh output:" >&2
+      echo "$create_out" >&2
       exit 1
     fi
     say "Created Project #$pn"
