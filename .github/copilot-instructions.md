@@ -5,24 +5,30 @@
 
 The Laravel Boost guidelines are specifically curated by Laravel maintainers for this application. These guidelines should be followed closely to enhance the user's satisfaction building Laravel applications.
 
+**🚀 IMPORTANT: This project is configured to always run Laravel Boost MCP (Model Context Protocol) server for enhanced functionality. You MUST prioritize using Laravel Boost tools over manual approaches wherever possible.**
+
 ## Foundational Context
 This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by these specific packages & versions.
 
-- php - 8.4.10
-- inertiajs/inertia-laravel (INERTIA) - v2
-- laravel/framework (LARAVEL) - v12
-- laravel/prompts (PROMPTS) - v0
-- laravel/wayfinder (WAYFINDER) - v0
-- laravel/pint (PINT) - v1
-- laravel/sail (SAIL) - v1
-- pestphp/pest (PEST) - v4
-- phpunit/phpunit (PHPUNIT) - v12
-- @inertiajs/vue3 (INERTIA) - v2
-- tailwindcss (TAILWINDCSS) - v4
-- vue (VUE) - v3
-- @laravel/vite-plugin-wayfinder (WAYFINDER) - v0
-- eslint (ESLINT) - v9
-- prettier (PRETTIER) - v3
+**PHP Backend Packages:**
+- php - 8.3.6
+- laravel/framework (LARAVEL) - v12.28.1
+- laravel/boost (BOOST) - v1.1 - **Critical MCP server for enhanced functionality**
+- inertiajs/inertia-laravel (INERTIA) - v2.0.6
+- laravel/prompts (PROMPTS) - v0.3.6
+- laravel/wayfinder (WAYFINDER) - v0.1.11
+- laravel/pint (PINT) - v1.24.0
+- laravel/sail (SAIL) - v1.45.0
+- pestphp/pest (PEST) - v4.0.4
+- phpunit/phpunit (PHPUNIT) - v12.3.7
+
+**Frontend Packages:**
+- @inertiajs/vue3 (INERTIA) - v2.1.2
+- tailwindcss (TAILWINDCSS) - v4.1.12
+- vue (VUE) - v3.5.18
+- @laravel/vite-plugin-wayfinder (WAYFINDER) - v0.1.3
+- eslint (ESLINT) - v9.33.0
+- prettier (PRETTIER) - v3.6.2
 
 
 ## Conventions
@@ -49,28 +55,45 @@ This application is a Laravel application and its main Laravel ecosystems packag
 
 === boost rules ===
 
-## Laravel Boost
-- Laravel Boost is an MCP server that comes with powerful tools designed specifically for this application. Use them.
+## Laravel Boost - ALWAYS USE THIS MCP SERVER
+
+**CRITICAL**: Laravel Boost is an MCP (Model Context Protocol) server that comes with powerful tools designed specifically for this application. You MUST use these tools for enhanced functionality and superior developer experience. This project is configured to "always run the laravel boost mcp for added flavour" - treat Laravel Boost as your primary toolkit.
+
+### Why Laravel Boost is Essential
+- Provides version-specific documentation for all Laravel ecosystem packages
+- Offers direct database interaction without writing raw queries
+- Enables real-time browser log monitoring and debugging
+- Streamlines Artisan command usage with parameter validation
+- Generates accurate project URLs automatically
+
+### Laravel Boost Tools You MUST Use
 
 ## Artisan
-- Use the `list-artisan-commands` tool when you need to call an Artisan command to double check the available parameters.
+- **ALWAYS** use the `list-artisan-commands` tool when you need to call an Artisan command to double check the available parameters.
+- This prevents errors and ensures you're using the correct flags and options.
 
 ## URLs
-- Whenever you share a project URL with the user you should use the `get-absolute-url` tool to ensure you're using the correct scheme, domain / IP, and port.
+- **ALWAYS** use the `get-absolute-url` tool whenever you share a project URL with the user to ensure you're using the correct scheme, domain / IP, and port.
+- Never hardcode URLs - always generate them through Laravel Boost.
 
 ## Tinker / Debugging
-- You should use the `tinker` tool when you need to execute PHP to debug code or query Eloquent models directly.
+- You **MUST** use the `tinker` tool when you need to execute PHP to debug code or query Eloquent models directly.
 - Use the `database-query` tool when you only need to read from the database.
+- These tools provide instant feedback without setting up temporary scripts.
 
 ## Reading Browser Logs With the `browser-logs` Tool
-- You can read browser logs, errors, and exceptions using the `browser-logs` tool from Boost.
+- **ALWAYS** use the `browser-logs` tool from Laravel Boost to read browser logs, errors, and exceptions.
+- This is infinitely more efficient than manual browser inspection.
 - Only recent browser logs will be useful - ignore old logs.
+- Use this tool immediately when debugging frontend issues or JavaScript errors.
 
-## Searching Documentation (Critically Important)
-- Boost comes with a powerful `search-docs` tool you should use before any other approaches. This tool automatically passes a list of installed packages and their versions to the remote Boost API, so it returns only version-specific documentation specific for the user's circumstance. You should pass an array of packages to filter on if you know you need docs for particular packages.
+## Searching Documentation (CRITICALLY IMPORTANT)
+- Laravel Boost comes with a **POWERFUL** `search-docs` tool you **MUST** use before any other approaches. This is your first line of defense for any Laravel ecosystem question.
+- This tool automatically passes a list of installed packages and their versions to the remote Boost API, so it returns only version-specific documentation specific for the user's circumstance.
+- You should pass an array of packages to filter on if you know you need docs for particular packages.
 - The 'search-docs' tool is perfect for all Laravel related packages, including Laravel, Inertia, Livewire, Filament, Tailwind, Pest, Nova, Nightwatch, etc.
-- You must use this tool to search for Laravel-ecosystem documentation before falling back to other approaches.
-- Search the documentation before making code changes to ensure we are taking the correct approach.
+- You **MUST** use this tool to search for Laravel-ecosystem documentation before falling back to other approaches.
+- **Search the documentation before making code changes** to ensure we are taking the correct approach.
 - Use multiple, broad, simple, topic based queries to start. For example: `['rate limiting', 'routing rate limiting', 'routing']`.
 - Do not add package names to queries - package information is already shared. For example, use `test resource table`, not `filament 4 test resource table`.
 
