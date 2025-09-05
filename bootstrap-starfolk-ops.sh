@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 # bootstrap_starfolk_ops_portable.sh
-# Portable: no jq, no --json, older gh compatible. Creates:
+# Portable: avoids -R flag (older gh compatibility). Creates:
 # - Owner-level Project (v2) by title (create if missing)
 # - Labels
 # - Milestones with deadlines
@@ -17,29 +17,47 @@ PROJECT_TITLE="${1:-Starfolk Ops Platform}"
 need() { command -v "$1" >/dev/null || { echo "Missing: $1"; exit 1; }; }
 need gh
 
-# Wrapper to always pass -R if GH_REPO is set
-ghr() {
+repo_slug() {
+  # Priority: explicit env GH_REPO, then OWNER/REPO, then git remote, then gh repo view.
   if [[ -n "${GH_REPO:-}" ]]; then
-    gh -R "$GH_REPO" "$@"
-  else
-    if [[ -n "${OWNER:-}" && -n "${REPO:-}" ]]; then
-      gh -R "$OWNER/$REPO" "$@"
-    else
-      gh "$@"
+    echo "$GH_REPO"; return 0
+  fi
+  if [[ -n "${OWNER:-}" && -n "${REPO:-}" ]]; then
+    echo "$OWNER/$REPO"; return 0
+  fi
+  # Try git remote origin
+  if command -v git >/dev/null 2>&1 && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    local url
+    url="$(git remote get-url origin 2>/dev/null || true)"
+    if [[ -n "$url" ]]; then
+      # Handle git@github.com:owner/repo.git or https://github.com/owner/repo.git
+      if [[ "$url" =~ github.com[/:]([^/]+)/([^/.]+) ]]; then
+        echo "${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"; return 0
+      fi
     fi
   fi
-}
-
-repo_slug() {
-  ghr repo view --json owner,name -q '.owner.login + "/" + .name'
+  # Fallback: plain gh repo view (parse two lines Owner/Name if available)
+  local owner name line
+  while IFS= read -r line; do
+    case "$line" in
+      Owner:*) owner="${line#Owner: }";;
+      Name:*) name="${line#Name: }";;
+    esac
+  done < <(gh repo view 2>/dev/null || true)
+  if [[ -n "$owner" && -n "$name" ]]; then
+    echo "$owner/$name"; return 0
+  fi
+  echo ""  # give up
 }
 
 # Extract OWNER from repo slug (for Projects v2 which are owner-level)
 ensure_owner() {
   if [[ -z "${OWNER:-}" || -z "${REPO:-}" ]]; then
     local slug; slug="$(repo_slug)"
-    OWNER="${slug%%/*}"
-    REPO="${slug##*/}"
+    if [[ -n "$slug" ]]; then
+      OWNER="${slug%%/*}"
+      REPO="${slug##*/}"
+    fi
   fi
 }
 
@@ -80,9 +98,8 @@ ensure_project() {
 # ---------- Labels ----------
 create_label() {
   local name="$1" color="$2" desc="${3:-}"
-  # Create or edit (idempotent)
-  ghr label create "$name" --color "$color" --description "$desc" >/dev/null 2>&1 || \
-  ghr label edit   "$name" --color "$color" --description "$desc" >/dev/null 2>&1 || true
+  gh label create "$name" --color "$color" --description "$desc" >/dev/null 2>&1 || \
+  gh label edit   "$name" --color "$color" --description "$desc" >/dev/null 2>&1 || true
 }
 
 ensure_labels() {
@@ -124,15 +141,16 @@ ensure_labels() {
 create_or_update_ms() {
   local title="$1" due="$2"
   local slug; slug="$(repo_slug)"
-  # Try create
-  ghr api -X POST "repos/$slug/milestones" \
+  if [[ -z "$slug" ]]; then
+    echo "Cannot determine repository slug for milestones" >&2
+    return 0
+  fi
+  gh api -X POST "repos/$slug/milestones" \
     -f title="$title" -f due_on="$due" >/dev/null 2>&1 || true
-  # Find number by title (with --jq, which is supported even on older gh api)
   local num
-  num="$(ghr api "repos/$slug/milestones?state=all" --jq ".[] | select(.title==\"$title\") | .number" 2>/dev/null || true)"
+  num="$(gh api "repos/$slug/milestones?state=all" --jq ".[] | select(.title==\"$title\") | .number" 2>/dev/null || true)"
   if [[ -n "$num" ]]; then
-    # Ensure due date is set/updated
-    ghr api -X PATCH "repos/$slug/milestones/$num" -f due_on="$due" >/dev/null 2>&1 || true
+    gh api -X PATCH "repos/$slug/milestones/$num" -f due_on="$due" >/dev/null 2>&1 || true
   fi
 }
 
@@ -151,23 +169,19 @@ ensure_milestones() {
 # ---------- Issues ----------
 create_issue() {
   local title="$1" labels="$2" milestone="$3" body="$4"
-  # Create; capture the printed URL from stdout (works on all gh versions)
   local out url
-  out="$(ghr issue create --title "$title" --label "$labels" --milestone "$milestone" --body "$body" 2>&1 || true)"
-  # If it already exists (rerun), try to detect and skip duplicate create prompts
+  out="$(gh issue create --title "$title" --label "$labels" --milestone "$milestone" --body "$body" 2>&1 || true)"
   url="$(printf "%s\n" "$out" | grep -Eo 'https://github.com/[^ ]+/issues/[0-9]+' | tail -n1)"
   if [[ -z "$url" ]]; then
-    # Try once more without body (some old gh versions are picky); then edit:
-    out="$(ghr issue create --title "$title" --label "$labels" --milestone "$milestone" 2>&1 || true)"
+    out="$(gh issue create --title "$title" --label "$labels" --milestone "$milestone" 2>&1 || true)"
     url="$(printf "%s\n" "$out" | grep -Eo 'https://github.com/[^ ]+/issues/[0-9]+' | tail -n1)"
     if [[ -z "$url" ]]; then
       echo "    ! Failed to create: $title"
       echo "      $out"
       return 1
     fi
-    # Add body afterwards
     local num="${url##*/}"
-    ghr issue edit "$num" --body "$body" >/dev/null 2>&1 || true
+    gh issue edit "$num" --body "$body" >/dev/null 2>&1 || true
   fi
   echo "$url"
 }
