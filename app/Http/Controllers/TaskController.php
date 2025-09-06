@@ -3,22 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Models\Task;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 
 class TaskController extends Controller
 {
-    public function index(): Response
+    public function index(): JsonResponse
     {
         $this->authorize('viewAny', Task::class);
         $tasks = Task::with('creator', 'assignedTo')->get();
+
         return response()->json(['tasks' => $tasks]);
     }
 
-    public function store(Request $request): Response
+    public function store(Request $request): JsonResponse
     {
         $this->authorize('create', Task::class);
-        
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -27,23 +28,25 @@ class TaskController extends Controller
             'due_date' => 'nullable|datetime',
             'assigned_to' => 'nullable|exists:users,id',
         ]);
-        
+
         $validated['created_by'] = auth()->id();
         $task = Task::create($validated);
+
         return response()->json(['task' => $task], 201);
     }
 
-    public function show(Task $task): Response
+    public function show(Task $task): JsonResponse
     {
         $this->authorize('view', $task);
         $task->load('creator', 'assignedTo');
+
         return response()->json(['task' => $task]);
     }
 
-    public function update(Request $request, Task $task): Response
+    public function update(Request $request, Task $task): JsonResponse
     {
         $this->authorize('update', $task);
-        
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -52,15 +55,17 @@ class TaskController extends Controller
             'due_date' => 'nullable|datetime',
             'assigned_to' => 'nullable|exists:users,id',
         ]);
-        
+
         $task->update($validated);
+
         return response()->json(['task' => $task]);
     }
 
-    public function destroy(Task $task): Response
+    public function destroy(Task $task): JsonResponse
     {
         $this->authorize('delete', $task);
         $task->delete();
+
         return response()->json(['message' => 'Task deleted successfully']);
     }
 }
