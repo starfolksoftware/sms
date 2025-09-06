@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DealController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -36,6 +40,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'permissions' => auth()->user()->getAllPermissions()->pluck('name'),
         ]);
     })->middleware('permission:create_campaigns')->name('marketing.dashboard');
+});
+
+// Protected resource routes with permission middleware
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Contact routes
+    Route::resource('contacts', ContactController::class)->except(['create', 'edit']);
+    
+    // Deal routes  
+    Route::resource('deals', DealController::class)->except(['create', 'edit']);
+    
+    // Task routes
+    Route::resource('tasks', TaskController::class)->except(['create', 'edit']);
+    
+    // Product routes - only admins can manage products
+    Route::resource('products', ProductController::class)
+        ->except(['create', 'edit'])
+        ->middleware('permission:manage_products');
 });
 
 require __DIR__.'/settings.php';

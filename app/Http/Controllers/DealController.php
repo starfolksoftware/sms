@@ -2,63 +2,65 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Deal;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class DealController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(): JsonResponse
     {
-        //
+        $this->authorize('viewAny', Deal::class);
+        $deals = Deal::with('creator', 'contact')->get();
+        return response()->json(['deals' => $deals]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function store(Request $request): JsonResponse
     {
-        //
+        $this->authorize('create', Deal::class);
+        
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'value' => 'required|numeric|min:0',
+            'status' => 'in:open,won,lost',
+            'expected_close_date' => 'nullable|date',
+            'contact_id' => 'required|exists:contacts,id',
+        ]);
+        
+        $validated['created_by'] = auth()->id();
+        $deal = Deal::create($validated);
+        return response()->json(['deal' => $deal], 201);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function show(Deal $deal): JsonResponse
     {
-        //
+        $this->authorize('view', $deal);
+        $deal->load('creator', 'contact');
+        return response()->json(['deal' => $deal]);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function update(Request $request, Deal $deal): JsonResponse
     {
-        //
+        $this->authorize('update', $deal);
+        
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'value' => 'required|numeric|min:0',
+            'status' => 'in:open,won,lost',
+            'expected_close_date' => 'nullable|date',
+            'contact_id' => 'required|exists:contacts,id',
+        ]);
+        
+        $deal->update($validated);
+        return response()->json(['deal' => $deal]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function destroy(Deal $deal): JsonResponse
     {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        $this->authorize('delete', $deal);
+        $deal->delete();
+        return response()->json(['message' => 'Deal deleted successfully']);
     }
 }
