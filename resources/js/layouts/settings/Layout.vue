@@ -6,8 +6,11 @@ import { toUrl, urlIsActive } from '@/lib/utils';
 import { appearance } from '@/routes';
 import { edit as editPassword } from '@/routes/password';
 import { edit } from '@/routes/profile';
+import { index as roles } from '@/routes/roles';
 import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
+
+const page = usePage();
 
 const sidebarNavItems: NavItem[] = [
     {
@@ -23,6 +26,14 @@ const sidebarNavItems: NavItem[] = [
         href: appearance(),
     },
 ];
+
+// Add roles navigation only for users with manage_roles permission
+if (page.props.auth?.user?.permissions?.includes('manage_roles')) {
+    sidebarNavItems.push({
+        title: 'Roles',
+        href: roles(),
+    });
+}
 
 const currentPath = typeof window !== undefined ? window.location.pathname : '';
 </script>
