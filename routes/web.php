@@ -44,15 +44,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 // Protected resource routes with permission middleware
 Route::middleware(['auth', 'verified'])->group(function () {
+    // Admin user management routes
+    Route::middleware('permission:manage_users')->prefix('admin')->group(function () {
+        Route::get('/users', [App\Http\Controllers\UserController::class, 'index'])->name('admin.users.index');
+        Route::post('/users', [App\Http\Controllers\UserController::class, 'store'])->name('admin.users.store');
+        Route::put('/users/{user}', [App\Http\Controllers\UserController::class, 'update'])->name('admin.users.update');
+        Route::delete('/users/{user}', [App\Http\Controllers\UserController::class, 'destroy'])->name('admin.users.destroy');
+        Route::post('/users/invite', [App\Http\Controllers\UserController::class, 'invite'])->name('admin.users.invite');
+        Route::post('/users/{user}/resend-invite', [App\Http\Controllers\UserController::class, 'resendInvite'])->name('admin.users.resend-invite');
+    });
+
     // Contact routes
     Route::resource('contacts', ContactController::class)->except(['create', 'edit']);
-    
-    // Deal routes  
+
+    // Deal routes
     Route::resource('deals', DealController::class)->except(['create', 'edit']);
-    
+
     // Task routes
     Route::resource('tasks', TaskController::class)->except(['create', 'edit']);
-    
+
     // Product routes - only admins can manage products
     Route::resource('products', ProductController::class)
         ->except(['create', 'edit'])

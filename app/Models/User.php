@@ -22,6 +22,11 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'status',
+        'invitation_token',
+        'invitation_sent_at',
+        'invitation_accepted_at',
+        'last_login_at',
     ];
 
     /**
@@ -43,7 +48,59 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'invitation_sent_at' => 'datetime',
+            'invitation_accepted_at' => 'datetime',
+            'last_login_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Check if user is pending invitation.
+     */
+    public function isPendingInvite(): bool
+    {
+        return $this->status === 'pending_invite';
+    }
+
+    /**
+     * Check if user is active.
+     */
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
+    }
+
+    /**
+     * Check if user is deactivated.
+     */
+    public function isDeactivated(): bool
+    {
+        return $this->status === 'deactivated';
+    }
+
+    /**
+     * Mark user as pending invitation.
+     */
+    public function markAsPendingInvite(): void
+    {
+        $this->update([
+            'status' => 'pending_invite',
+            'invitation_token' => \Str::random(32),
+            'invitation_sent_at' => now(),
+        ]);
+    }
+
+    /**
+     * Mark user as accepting invitation.
+     */
+    public function acceptInvitation(): void
+    {
+        $this->update([
+            'status' => 'active',
+            'invitation_token' => null,
+            'invitation_accepted_at' => now(),
+            'email_verified_at' => now(),
+        ]);
     }
 }
