@@ -28,7 +28,8 @@ const sidebarNavItems: NavItem[] = [
 ];
 
 // Add roles navigation only for users with manage_roles permission
-if (page.props.auth?.user?.permissions?.includes('manage_roles')) {
+const user = page.props.auth?.user as any;
+if (user?.roles?.some((role: any) => role.name === 'admin') || user?.permissions?.includes('manage_roles')) {
     sidebarNavItems.push({
         title: 'Roles',
         href: roles(),
