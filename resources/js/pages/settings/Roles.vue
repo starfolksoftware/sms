@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref, reactive, watch } from 'vue';
+import { ChevronDown, ChevronRight } from 'lucide-vue-next';
 
 import HeadingSmall from '@/components/HeadingSmall.vue';
 import { Button } from '@/components/ui/button';
@@ -40,6 +41,8 @@ const props = defineProps<Props>();
 const isCreateDialogOpen = ref(false);
 const isEditDialogOpen = ref(false);
 const editingRole = ref<Role | null>(null);
+const viewingRole = ref<Role | null>(null);
+const isViewDialogOpen = ref(false);
 
 // Create & Edit role forms
 const createForm = useForm({
@@ -86,6 +89,11 @@ function openEditDialog(role: Role) {
         editPermissionState[p.name] = editForm.permissions.includes(p.name);
     }
     isEditDialogOpen.value = true;
+}
+
+function openViewDialog(role: Role) {
+    viewingRole.value = role;
+    isViewDialogOpen.value = true;
 }
 
 function createRole() {
@@ -155,6 +163,14 @@ const permissionCategories = {
         p.name.includes('analytics')
     ),
 };
+
+// Collapsible state per category
+const collapsedCategories = reactive<Record<string, boolean>>({});
+Object.keys(permissionCategories).forEach(cat => { collapsedCategories[cat] = false; });
+
+function toggleCategory(cat: string) {
+    collapsedCategories[cat] = !collapsedCategories[cat];
+}
 </script>
 
 <template>
@@ -173,13 +189,42 @@ const permissionCategories = {
                     </Button>
                 </div>
 
-                <!-- Roles and Permissions Matrix -->
+                <!-- Roles List -->
+                <Card>
+                    <CardHeader class="pb-4">
+                        <CardTitle>Roles</CardTitle>
+                        <CardDescription>Manage roles. Click a role name to view its permissions.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ul class="divide-y">
+                            <li 
+                                v-for="role in roles" 
+                                :key="role.id" 
+                                class="flex items-center justify-between py-3"
+                            >
+                                <button type="button" class="text-left group flex-1" @click="openViewDialog(role)">
+                                    <span class="font-medium group-hover:underline">{{ role.name }}</span>
+                                    <span class="ml-2 text-xs text-muted-foreground">({{ role.permissions.length }} permissions)</span>
+                                </button>
+                                <div class="flex items-center gap-2">
+                                    <Button size="sm" variant="outline" @click="openEditDialog(role)">Edit</Button>
+                                    <Button 
+                                        v-if="role.name !== 'admin'" 
+                                        size="sm" 
+                                        variant="destructive" 
+                                        @click="deleteRole(role)"
+                                    >Delete</Button>
+                                </div>
+                            </li>
+                        </ul>
+                    </CardContent>
+                </Card>
+
+                <!-- Roles & Permissions Matrix -->
                 <Card>
                     <CardHeader>
                         <CardTitle>Roles & Permissions Matrix</CardTitle>
-                        <CardDescription>
-                            Overview of all roles and their assigned permissions
-                        </CardDescription>
+                        <CardDescription>Overview of all roles and their assigned permissions (collapse sections to focus).</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div class="overflow-x-auto">
@@ -200,82 +245,42 @@ const permissionCategories = {
                                     <template v-for="(categoryPermissions, category) in permissionCategories" :key="category">
                                         <tr v-if="categoryPermissions.length > 0" class="border-b bg-muted/50">
                                             <td :colspan="roles.length + 1" class="py-2 px-4 font-medium text-sm text-muted-foreground">
-                                                {{ category }}
+                                                <button type="button" class="inline-flex items-center gap-1 select-none" @click="toggleCategory(category)">
+                                                    <component :is="collapsedCategories[category] ? ChevronRight : ChevronDown" class="w-4 h-4" />
+                                                    {{ category }}
+                                                </button>
                                             </td>
                                         </tr>
-                                        <tr 
-                                            v-for="permission in categoryPermissions" 
-                                            :key="permission.id"
-                                            class="border-b hover:bg-muted/50"
-                                        >
-                                            <td class="py-3 px-4 text-sm">
-                                                {{ permission.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) }}
-                                            </td>
-                                            <td 
-                                                v-for="role in roles" 
-                                                :key="role.id"
-                                                class="text-center py-3 px-4"
+                                        <template v-if="!collapsedCategories[category]">
+                                            <tr 
+                                                v-for="permission in categoryPermissions" 
+                                                :key="permission.id"
+                                                class="border-b hover:bg-muted/50"
                                             >
-                                                <div class="flex justify-center">
-                                                    <Checkbox 
-                                                        :model-value="hasPermission(role.name, permission.name)"
-                                                        disabled
-                                                        class="pointer-events-none"
-                                                    />
-                                                </div>
-                                            </td>
-                                        </tr>
+                                                <td class="py-3 px-4 text-sm">
+                                                    {{ permission.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) }}
+                                                </td>
+                                                <td 
+                                                    v-for="role in roles" 
+                                                    :key="role.id"
+                                                    class="text-center py-3 px-4"
+                                                >
+                                                    <div class="flex justify-center">
+                                                        <Checkbox 
+                                                            :model-value="hasPermission(role.name, permission.name)"
+                                                            disabled
+                                                            class="pointer-events-none"
+                                                        />
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </template>
                                     </template>
                                 </tbody>
                             </table>
                         </div>
                     </CardContent>
                 </Card>
-
-                <!-- Individual Role Cards -->
-                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    <Card v-for="role in roles" :key="role.id">
-                        <CardHeader>
-                            <CardTitle class="flex items-center justify-between">
-                                {{ role.name }}
-                                <div class="flex gap-2">
-                                    <Button 
-                                        size="sm" 
-                                        variant="outline"
-                                        @click="openEditDialog(role)"
-                                    >
-                                        Edit
-                                    </Button>
-                                    <Button 
-                                        v-if="role.name !== 'admin'"
-                                        size="sm" 
-                                        variant="destructive"
-                                        @click="deleteRole(role)"
-                                    >
-                                        Delete
-                                    </Button>
-                                </div>
-                            </CardTitle>
-                            <CardDescription>
-                                {{ role.permissions.length }} permissions assigned
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div class="space-y-2 max-h-40 overflow-y-auto">
-                                <div 
-                                    v-for="permission in role.permissions" 
-                                    :key="permission.id"
-                                    class="text-sm text-muted-foreground"
-                                >
-                                    {{ permission.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) }}
-                                </div>
-                                <div v-if="role.permissions.length === 0" class="text-sm text-muted-foreground">
-                                    No permissions assigned
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
             </div>
 
             <!-- Create Role Dialog -->
@@ -399,6 +404,28 @@ const permissionCategories = {
                             </Button>
                         </div>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            <!-- View Role Permissions Dialog -->
+            <Dialog v-model:open="isViewDialogOpen">
+                <DialogContent class="max-w-lg max-h-[70vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>{{ viewingRole?.name }} Permissions</DialogTitle>
+                    </DialogHeader>
+                    <div v-if="viewingRole" class="space-y-4">
+                        <div v-if="viewingRole.permissions.length === 0" class="text-sm text-muted-foreground">
+                            No permissions assigned
+                        </div>
+                        <ul v-else class="list-disc pl-5 space-y-1 text-sm">
+                            <li v-for="perm in viewingRole.permissions" :key="perm.id">
+                                {{ perm.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) }}
+                            </li>
+                        </ul>
+                        <div class="flex justify-end">
+                            <Button variant="outline" type="button" @click="isViewDialogOpen = false">Close</Button>
+                        </div>
+                    </div>
                 </DialogContent>
             </Dialog>
         </SettingsLayout>
