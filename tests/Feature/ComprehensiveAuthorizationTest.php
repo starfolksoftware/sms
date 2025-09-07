@@ -106,6 +106,7 @@ test('complete authorization system enforces permissions correctly', function ()
     ])->assertForbidden();
 
     // Test 8: Unauthenticated access is properly blocked
+    auth()->logout(); // Clear authentication
     $this->get('/contacts')->assertRedirect();
     $this->get('/admin')->assertRedirect();
     $this->post('/contacts', ['name' => 'Test'])->assertRedirect();
@@ -144,6 +145,7 @@ test('error responses provide proper HTTP status codes', function () {
     $this->actingAs($marketingUser)->get('/admin')->assertStatus(403);
 
     // Test unauthenticated requests to dashboard redirect
+    auth()->logout(); // Clear authentication
     $this->get('/dashboard')->assertRedirect();
 
     // Test unauthenticated API requests also redirect to login
