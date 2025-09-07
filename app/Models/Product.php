@@ -17,6 +17,7 @@ class Product extends Model
         'price',
         'sku',
         'stock_quantity',
+        'product_type',
         'active',
         'created_by',
     ];
@@ -27,6 +28,22 @@ class Product extends Model
             'price' => 'decimal:2',
             'active' => 'boolean',
         ];
+    }
+
+    /**
+     * Determine if this is a digital product (SaaS or info product)
+     */
+    public function isDigital(): bool
+    {
+        return in_array($this->product_type, ['saas', 'info_product', 'digital']);
+    }
+
+    /**
+     * Determine if this product requires inventory tracking
+     */
+    public function requiresInventory(): bool
+    {
+        return $this->product_type === 'physical';
     }
 
     public function creator(): BelongsTo
