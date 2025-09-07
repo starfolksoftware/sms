@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, useForm, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, reactive, watch } from 'vue';
 
 import HeadingSmall from '@/components/HeadingSmall.vue';
 import { Button } from '@/components/ui/button';
@@ -41,17 +41,19 @@ const isCreateDialogOpen = ref(false);
 const isEditDialogOpen = ref(false);
 const editingRole = ref<Role | null>(null);
 
-// Create role form
+// Create & Edit role forms
 const createForm = useForm({
     name: '',
     permissions: [] as string[],
 });
-
-// Edit role form  
 const editForm = useForm({
     name: '',
     permissions: [] as string[],
 });
+
+// Reactive permission state maps (permission.name => boolean)
+const createPermissionState = reactive<Record<string, boolean>>({});
+const editPermissionState = reactive<Record<string, boolean>>({});
 
 const breadcrumbItems: BreadcrumbItem[] = [
     {
@@ -60,9 +62,17 @@ const breadcrumbItems: BreadcrumbItem[] = [
     },
 ];
 
+function initializeCreatePermissionState() {
+    Object.keys(createPermissionState).forEach(k => delete createPermissionState[k]);
+    for (const p of props.permissions) {
+        createPermissionState[p.name] = false;
+    }
+    createForm.permissions = [];
+}
+
 function openCreateDialog() {
     createForm.reset();
-    createForm.permissions = [];
+    initializeCreatePermissionState();
     isCreateDialogOpen.value = true;
 }
 
@@ -70,6 +80,11 @@ function openEditDialog(role: Role) {
     editingRole.value = role;
     editForm.name = role.name;
     editForm.permissions = role.permissions.map(p => p.name);
+    // Initialize edit permission state
+    Object.keys(editPermissionState).forEach(k => delete editPermissionState[k]);
+    for (const p of props.permissions) {
+        editPermissionState[p.name] = editForm.permissions.includes(p.name);
+    }
     isEditDialogOpen.value = true;
 }
 
@@ -114,21 +129,14 @@ function hasPermission(roleName: string, permissionName: string): boolean {
     return role?.permissions.some(p => p.name === permissionName) ?? false;
 }
 
-function toggleCreatePermission(permission: string, checked: boolean) {
-    if (checked && !createForm.permissions.includes(permission)) {
-        createForm.permissions.push(permission);
-    } else if (!checked) {
-        createForm.permissions = createForm.permissions.filter(p => p !== permission);
-    }
-}
+// Synchronize form arrays whenever state maps change
+watch(createPermissionState, () => {
+    createForm.permissions = Object.keys(createPermissionState).filter(p => createPermissionState[p]);
+}, { deep: true });
 
-function toggleEditPermission(permission: string, checked: boolean) {
-    if (checked && !editForm.permissions.includes(permission)) {
-        editForm.permissions.push(permission);
-    } else if (!checked) {
-        editForm.permissions = editForm.permissions.filter(p => p !== permission);
-    }
-}
+watch(editPermissionState, () => {
+    editForm.permissions = Object.keys(editPermissionState).filter(p => editPermissionState[p]);
+}, { deep: true });
 
 // Group permissions by category for better organization
 const permissionCategories = {
@@ -210,7 +218,7 @@ const permissionCategories = {
                                             >
                                                 <div class="flex justify-center">
                                                     <Checkbox 
-                                                        :checked="hasPermission(role.name, permission.name)"
+                                                        :model-value="hasPermission(role.name, permission.name)"
                                                         disabled
                                                         class="pointer-events-none"
                                                     />
@@ -305,8 +313,7 @@ const permissionCategories = {
                                             >
                                                 <Checkbox 
                                                     :id="`create-${permission.name}`"
-                                                    :checked="createForm.permissions.includes(permission.name)"
-                                                    @update:checked="(checked: boolean) => toggleCreatePermission(permission.name, checked)"
+                                                    v-model="createPermissionState[permission.name]"
                                                 />
                                                 <Label 
                                                     :for="`create-${permission.name}`"
@@ -368,8 +375,7 @@ const permissionCategories = {
                                             >
                                                 <Checkbox 
                                                     :id="`edit-${permission.name}`"
-                                                    :checked="editForm.permissions.includes(permission.name)"
-                                                    @update:checked="(checked: boolean) => toggleEditPermission(permission.name, checked)"
+                                                    v-model="editPermissionState[permission.name]"
                                                 />
                                                 <Label 
                                                     :for="`edit-${permission.name}`"
