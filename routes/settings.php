@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
+use App\Http\Controllers\Settings\RoleController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -21,4 +22,15 @@ Route::middleware('auth')->group(function () {
     Route::get('settings/appearance', function () {
         return Inertia::render('settings/Appearance');
     })->name('appearance');
+
+    // Role management routes - admin only
+    Route::resource('settings/roles', RoleController::class)
+        ->only(['index', 'store', 'update', 'destroy'])
+        ->middleware('permission:manage_roles')
+        ->names([
+            'index' => 'roles.index',
+            'store' => 'roles.store', 
+            'update' => 'roles.update',
+            'destroy' => 'roles.destroy',
+        ]);
 });

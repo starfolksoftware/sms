@@ -38,12 +38,21 @@ class HandleInertiaRequests extends Middleware
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
+        $user = $request->user();
+
+        // Eager load roles relation if a user is present so the frontend can reliably check admin status
+        if ($user && ! $user->relationLoaded('roles')) {
+            $user->load('roles');
+        }
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user,
+                // Flat permissions list for convenience (Spatie) – null safe
+                'permissions' => $user ? $user->getAllPermissions()->pluck('name')->values() : [],
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
