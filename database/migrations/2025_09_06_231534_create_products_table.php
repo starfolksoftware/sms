@@ -17,7 +17,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->decimal('price', 10, 2);
             $table->string('sku')->unique();
-            $table->enum('product_type', ['saas', 'info_product', 'physical', 'digital'])->default('digital');
+            $table->string('product_type')->default('digital');
             $table->integer('stock_quantity')->default(0)->nullable();
             $table->boolean('active')->default(true);
             $table->foreignId('created_by')->constrained('users');

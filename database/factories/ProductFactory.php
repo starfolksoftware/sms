@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ProductType;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -17,7 +18,11 @@ class ProductFactory extends Factory
      */
     public function definition(): array
     {
-        $productType = fake()->randomElement(['saas', 'info_product', 'digital']);
+        $productType = fake()->randomElement([
+            ProductType::Saas->value,
+            ProductType::InfoProduct->value,
+            ProductType::Digital->value,
+        ]);
 
         return [
             'name' => fake()->words(2, true).' '.fake()->randomElement(['Pro', 'Plus', 'Basic', 'Premium']),
@@ -25,7 +30,7 @@ class ProductFactory extends Factory
             'price' => fake()->randomFloat(2, 10, 1000),
             'sku' => fake()->unique()->bothify('SKU-####-????'),
             'product_type' => $productType,
-            'stock_quantity' => $productType === 'physical' ? fake()->numberBetween(0, 100) : null,
+            'stock_quantity' => $productType === ProductType::Physical->value ? fake()->numberBetween(0, 100) : null,
             'active' => fake()->boolean(80), // 80% chance of being active
             'created_by' => User::factory(),
         ];
@@ -37,7 +42,7 @@ class ProductFactory extends Factory
     public function saas(): static
     {
         return $this->state(fn (array $attributes) => [
-            'product_type' => 'saas',
+            'product_type' => ProductType::Saas->value,
             'name' => fake()->company().' '.fake()->randomElement(['Platform', 'Suite', 'Hub', 'Pro', 'Enterprise']),
             'description' => 'SaaS solution for '.fake()->bs(),
             'stock_quantity' => null,
@@ -50,7 +55,7 @@ class ProductFactory extends Factory
     public function infoProduct(): static
     {
         return $this->state(fn (array $attributes) => [
-            'product_type' => 'info_product',
+            'product_type' => ProductType::InfoProduct->value,
             'name' => fake()->catchPhrase().' '.fake()->randomElement(['Course', 'Guide', 'Masterclass', 'Blueprint']),
             'description' => 'Learn how to '.fake()->bs(),
             'stock_quantity' => null,
@@ -63,7 +68,7 @@ class ProductFactory extends Factory
     public function physical(): static
     {
         return $this->state(fn (array $attributes) => [
-            'product_type' => 'physical',
+            'product_type' => ProductType::Physical->value,
             'stock_quantity' => fake()->numberBetween(0, 100),
         ]);
     }

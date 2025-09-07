@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ProductType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,6 +28,7 @@ class Product extends Model
         return [
             'price' => 'decimal:2',
             'active' => 'boolean',
+            'product_type' => ProductType::class,
         ];
     }
 
@@ -35,7 +37,7 @@ class Product extends Model
      */
     public function isDigital(): bool
     {
-        return in_array($this->product_type, ['saas', 'info_product', 'digital']);
+        return $this->product_type->isDigital();
     }
 
     /**
@@ -43,7 +45,7 @@ class Product extends Model
      */
     public function requiresInventory(): bool
     {
-        return $this->product_type === 'physical';
+        return $this->product_type->requiresInventory();
     }
 
     public function creator(): BelongsTo
