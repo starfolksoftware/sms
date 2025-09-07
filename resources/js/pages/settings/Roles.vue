@@ -6,7 +6,7 @@ import HeadingSmall from '@/components/HeadingSmall.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -306,7 +306,7 @@ const permissionCategories = {
                                                 <Checkbox 
                                                     :id="`create-${permission.name}`"
                                                     :checked="createForm.permissions.includes(permission.name)"
-                                                    @update:checked="(checked) => toggleCreatePermission(permission.name, checked)"
+                                                    @update:checked="(checked: boolean) => toggleCreatePermission(permission.name, checked)"
                                                 />
                                                 <Label 
                                                     :for="`create-${permission.name}`"
@@ -369,7 +369,7 @@ const permissionCategories = {
                                                 <Checkbox 
                                                     :id="`edit-${permission.name}`"
                                                     :checked="editForm.permissions.includes(permission.name)"
-                                                    @update:checked="(checked) => toggleEditPermission(permission.name, checked)"
+                                                    @update:checked="(checked: boolean) => toggleEditPermission(permission.name, checked)"
                                                 />
                                                 <Label 
                                                     :for="`edit-${permission.name}`"
