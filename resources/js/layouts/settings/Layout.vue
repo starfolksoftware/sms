@@ -27,13 +27,12 @@ const sidebarNavItems: NavItem[] = [
     },
 ];
 
-// Add roles navigation only for users with manage_roles permission
+// Add roles navigation only for users with manage_roles permission or admin role
 const user = page.props.auth?.user as any;
-if (user?.roles?.some((role: any) => role.name === 'admin') || user?.permissions?.includes('manage_roles')) {
-    sidebarNavItems.push({
-        title: 'Roles',
-        href: roles(),
-    });
+const permissions: string[] = (page.props.auth as any)?.permissions ?? [];
+const isAdmin = Array.isArray(user?.roles) && user.roles.some((r: any) => r.name === 'admin');
+if (isAdmin || permissions.includes('manage_roles')) {
+    sidebarNavItems.push({ title: 'Roles', href: roles() });
 }
 
 const currentPath = typeof window !== undefined ? window.location.pathname : '';
