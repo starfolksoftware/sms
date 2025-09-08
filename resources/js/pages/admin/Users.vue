@@ -1,11 +1,11 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { index, store, update, destroy, invite, resendInvite as resendInviteRoute } from '@/routes/admin/users';
@@ -492,13 +492,15 @@ const filteredRoleOptions = computed(() => [
                                     :variant="link.active ? 'default' : 'outline'"
                                     size="sm"
                                     @click="router.visit(link.url, { preserveState: true })"
-                                    v-html="link.label"
-                                />
+                                >
+                                    {{ link.label }}
+                                </Button>
                                 <span
                                     v-else
                                     class="px-3 py-2 text-sm text-gray-500"
-                                    v-html="link.label"
-                                />
+                                >
+                                    {{ link.label }}
+                                </span>
                             </template>
                         </nav>
                     </div>
