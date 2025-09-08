@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('status', ['active', 'deactivated', 'pending_invite'])->default('active');
+            $table->string('status')->default('active');
             $table->string('invitation_token')->nullable();
             $table->timestamp('invitation_sent_at')->nullable();
             $table->timestamp('invitation_accepted_at')->nullable();

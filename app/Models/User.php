@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\UserStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -52,6 +53,7 @@ class User extends Authenticatable
             'invitation_accepted_at' => 'datetime',
             'last_login_at' => 'datetime',
             'password' => 'hashed',
+            'status' => UserStatus::class,
         ];
     }
 
@@ -60,7 +62,7 @@ class User extends Authenticatable
      */
     public function isPendingInvite(): bool
     {
-        return $this->status === 'pending_invite';
+        return $this->status === UserStatus::PendingInvite;
     }
 
     /**
@@ -68,7 +70,7 @@ class User extends Authenticatable
      */
     public function isActive(): bool
     {
-        return $this->status === 'active';
+        return $this->status === UserStatus::Active;
     }
 
     /**
@@ -76,7 +78,7 @@ class User extends Authenticatable
      */
     public function isDeactivated(): bool
     {
-        return $this->status === 'deactivated';
+        return $this->status === UserStatus::Deactivated;
     }
 
     /**
@@ -85,7 +87,7 @@ class User extends Authenticatable
     public function markAsPendingInvite(): void
     {
         $this->update([
-            'status' => 'pending_invite',
+            'status' => UserStatus::PendingInvite,
             'invitation_token' => \Str::random(32),
             'invitation_sent_at' => now(),
         ]);
@@ -97,7 +99,7 @@ class User extends Authenticatable
     public function acceptInvitation(): void
     {
         $this->update([
-            'status' => 'active',
+            'status' => UserStatus::Active,
             'invitation_token' => null,
             'invitation_accepted_at' => now(),
             'email_verified_at' => now(),

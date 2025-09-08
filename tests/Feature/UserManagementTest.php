@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserStatus;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -52,7 +53,7 @@ test('admin can invite a user', function () {
 
     $user = User::where('email', 'newuser@example.com')->first();
     expect($user)->not->toBeNull();
-    expect($user->status)->toBe('pending_invite');
+    expect($user->status)->toBe(UserStatus::PendingInvite);
     expect($user->invitation_token)->not->toBeNull();
     expect($user->hasRole('sales'))->toBeTrue();
 });
@@ -69,18 +70,18 @@ test('admin can create a user directly', function () {
 
     $user = User::where('email', 'direct@example.com')->first();
     expect($user)->not->toBeNull();
-    expect($user->status)->toBe('active');
+    expect($user->status)->toBe(UserStatus::Active);
     expect($user->hasRole('marketing'))->toBeTrue();
 });
 
 test('admin can update a user', function () {
-    $user = User::factory()->create(['status' => 'active']);
+    $user = User::factory()->create(['status' => UserStatus::Active]);
     $user->assignRole('sales');
 
     $response = $this->actingAs($this->adminUser)->put("/admin/users/{$user->id}", [
         'name' => 'Updated Name',
         'email' => $user->email,
-        'status' => 'deactivated',
+        'status' => UserStatus::Deactivated->value,
         'roles' => ['marketing'],
     ]);
 
@@ -88,7 +89,7 @@ test('admin can update a user', function () {
 
     $user->refresh();
     expect($user->name)->toBe('Updated Name');
-    expect($user->status)->toBe('deactivated');
+    expect($user->status)->toBe(UserStatus::Deactivated);
     expect($user->hasRole('marketing'))->toBeTrue();
     expect($user->hasRole('sales'))->toBeFalse();
 });
@@ -122,7 +123,7 @@ test('admin cannot delete the last admin user', function () {
 });
 
 test('admin can resend invite to pending user', function () {
-    $user = User::factory()->create(['status' => 'pending_invite']);
+    $user = User::factory()->create(['status' => UserStatus::PendingInvite]);
     $originalToken = $user->invitation_token;
     $originalSentAt = $user->invitation_sent_at;
 
@@ -138,7 +139,7 @@ test('admin can resend invite to pending user', function () {
 });
 
 test('admin cannot resend invite to non-pending user', function () {
-    $user = User::factory()->create(['status' => 'active']);
+    $user = User::factory()->create(['status' => UserStatus::Active]);
 
     $response = $this->actingAs($this->adminUser)->post("/admin/users/{$user->id}/resend-invite");
 
@@ -188,13 +189,13 @@ test('user creation prevents duplicate emails', function () {
 
 test('user management includes search and filtering', function () {
     // Create test users with different roles and statuses
-    $activeUser = User::factory()->create(['name' => 'Alice Active', 'status' => 'active']);
+    $activeUser = User::factory()->create(['name' => 'Alice Active', 'status' => UserStatus::Active]);
     $activeUser->assignRole('sales');
 
-    $deactivatedUser = User::factory()->create(['name' => 'Bob Deactivated', 'status' => 'deactivated']);
+    $deactivatedUser = User::factory()->create(['name' => 'Bob Deactivated', 'status' => UserStatus::Deactivated]);
     $deactivatedUser->assignRole('marketing');
 
-    $pendingUser = User::factory()->create(['name' => 'Charlie Pending', 'status' => 'pending_invite']);
+    $pendingUser = User::factory()->create(['name' => 'Charlie Pending', 'status' => UserStatus::PendingInvite]);
     $pendingUser->assignRole('sales');
 
     // Test search by name
@@ -220,7 +221,7 @@ test('admin cannot deactivate themselves', function () {
     $response = $this->actingAs($this->adminUser)->put("/admin/users/{$this->adminUser->id}", [
         'name' => $this->adminUser->name,
         'email' => $this->adminUser->email,
-        'status' => 'deactivated',
+        'status' => UserStatus::Deactivated->value,
         'roles' => ['admin'],
     ]);
 
@@ -228,5 +229,5 @@ test('admin cannot deactivate themselves', function () {
     $response->assertSessionHasErrors(['status']);
 
     $this->adminUser->refresh();
-    expect($this->adminUser->status)->toBe('active');
+    expect($this->adminUser->status)->toBe(UserStatus::Active);
 });

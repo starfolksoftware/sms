@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\UserStatus;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -87,7 +88,7 @@ class UserController extends Controller
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make(Str::random(32)), // Temporary password
-                'status' => 'active',
+                'status' => UserStatus::Active,
             ]);
         }
 
@@ -107,13 +108,13 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
-            'status' => 'in:active,deactivated',
+            'status' => ['in:'.implode(',', UserStatus::values())],
             'roles' => 'array',
             'roles.*' => 'exists:roles,name',
         ]);
 
         // Prevent admin from deactivating themselves
-        if ($user->id === auth()->id() && isset($validated['status']) && $validated['status'] === 'deactivated') {
+        if ($user->id === auth()->id() && isset($validated['status']) && $validated['status'] === UserStatus::Deactivated->value) {
             return back()->withErrors(['status' => 'Cannot deactivate your own account.']);
         }
 
