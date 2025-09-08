@@ -27,11 +27,15 @@ const isEditDialogOpen = ref(false);
 // Search and filter state
 const searchForm = useForm({
     search: props.filters?.search || '',
-    role: props.filters?.role || '',
-    status: props.filters?.status || '',
+    role: props.filters?.role || 'all',
+    status: props.filters?.status || 'all',
     sort: props.filters?.sort || 'name',
     direction: props.filters?.direction || 'asc',
 });
+
+// Convert empty string filters from backend to "all" for frontend
+if (searchForm.role === '') searchForm.role = 'all';
+if (searchForm.status === '') searchForm.status = 'all';
 
 // Create user form
 const createForm = useForm({
@@ -58,7 +62,12 @@ const inviteForm = useForm({
 
 // Search and filter functionality
 function performSearch() {
-    router.get(index().url, searchForm.data(), {
+    const formData = { ...searchForm.data() };
+    // Convert "all" values back to empty strings for backend
+    if (formData.role === 'all') formData.role = '';
+    if (formData.status === 'all') formData.status = '';
+    
+    router.get(index().url, formData, {
         preserveState: true,
         preserveScroll: true,
     });
@@ -66,6 +75,9 @@ function performSearch() {
 
 function clearFilters() {
     searchForm.reset();
+    // Reset to "all" values for the UI
+    searchForm.role = 'all';
+    searchForm.status = 'all';
     performSearch();
 }
 
@@ -162,14 +174,14 @@ function formatDate(dateString) {
 
 // Computed
 const filteredStatusOptions = computed(() => [
-    { value: '', label: 'All Statuses' },
+    { value: 'all', label: 'All Statuses' },
     { value: 'active', label: 'Active' },
     { value: 'deactivated', label: 'Deactivated' },
     { value: 'pending_invite', label: 'Pending Invite' },
 ]);
 
 const filteredRoleOptions = computed(() => [
-    { value: '', label: 'All Roles' },
+    { value: 'all', label: 'All Roles' },
     ...props.roles.map(role => ({ value: role.name, label: role.name }))
 ]);
 </script>
