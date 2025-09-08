@@ -2,11 +2,13 @@
 import { ref, computed } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
+import AdminLayout from '@/layouts/admin/Layout.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { index, store, update, destroy, invite, resendInvite as resendInviteRoute } from '@/routes/admin/users';
 
@@ -176,19 +178,14 @@ const filteredRoleOptions = computed(() => [
     <Head title="User Management" />
     
     <AppLayout>
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">User Management</h1>
-                <p class="mt-2 text-gray-600 dark:text-gray-400">Manage users, roles, and invitations</p>
-            </div>
-
+        <AdminLayout title="User Management" description="Manage users, roles, and invitations">
             <!-- Search and Filters -->
             <Card class="mb-6">
                 <CardHeader>
                     <CardTitle>Search & Filters</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div class="flex flex-wrap gap-4">
+                    <div class="flex flex-wrap gap-4 items-end">
                         <div class="flex-1 min-w-64">
                             <Label for="search">Search by name or email</Label>
                             <Input
@@ -200,37 +197,45 @@ const filteredRoleOptions = computed(() => [
                         </div>
                         <div class="w-48">
                             <Label>Role</Label>
-                            <select 
-                                v-model="searchForm.role" 
-                                @change="performSearch"
-                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
+                            <Select 
+                                :model-value="searchForm.role" 
+                                @update:model-value="(value) => { searchForm.role = value; performSearch(); }"
                             >
-                                <option
-                                    v-for="option in filteredRoleOptions"
-                                    :key="option.value"
-                                    :value="option.value"
-                                >
-                                    {{ option.label }}
-                                </option>
-                            </select>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="All Roles" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem
+                                        v-for="option in filteredRoleOptions"
+                                        :key="option.value"
+                                        :value="option.value"
+                                    >
+                                        {{ option.label }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div class="w-48">
                             <Label>Status</Label>
-                            <select 
-                                v-model="searchForm.status" 
-                                @change="performSearch"
-                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
+                            <Select 
+                                :model-value="searchForm.status" 
+                                @update:model-value="(value) => { searchForm.status = value; performSearch(); }"
                             >
-                                <option
-                                    v-for="option in filteredStatusOptions"
-                                    :key="option.value"
-                                    :value="option.value"
-                                >
-                                    {{ option.label }}
-                                </option>
-                            </select>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="All Statuses" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem
+                                        v-for="option in filteredStatusOptions"
+                                        :key="option.value"
+                                        :value="option.value"
+                                    >
+                                        {{ option.label }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
-                        <div class="flex items-end">
+                        <div class="flex">
                             <Button variant="outline" @click="clearFilters">Clear</Button>
                         </div>
                     </div>
@@ -591,6 +596,6 @@ const filteredRoleOptions = computed(() => [
                     </form>
                 </DialogContent>
             </Dialog>
-        </div>
+        </AdminLayout>
     </AppLayout>
 </template>
