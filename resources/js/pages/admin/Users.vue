@@ -13,22 +13,22 @@ import { index, store, update, destroy, invite, resendInvite as resendInviteRout
 const props = defineProps({
     users: Object,
     roles: Array,
-    filters: Object,
+    filters: {
+        type: Object,
+        default: () => ({}),
+    },
 });
 
 // State management
 const isCreateDialogOpen = ref(false);
 const isEditDialogOpen = ref(false);
-const isInviteDialogOpen = ref(false);
-const editingUser = ref(null);
-
 // Search and filter state
 const searchForm = useForm({
-    search: props.filters.search || '',
-    role: props.filters.role || '',
-    status: props.filters.status || '',
-    sort: props.filters.sort || 'name',
-    direction: props.filters.direction || 'asc',
+    search: props.filters?.search || '',
+    role: props.filters?.role || '',
+    status: props.filters?.status || '',
+    sort: props.filters?.sort || 'name',
+    direction: props.filters?.direction || 'asc',
 });
 
 // Create user form
@@ -443,7 +443,7 @@ const filteredRoleOptions = computed(() => [
                                     </td>
                                     <td class="py-3 px-4">
                                         <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', getStatusBadgeClasses(user.status)]">
-                                            {{ user.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}
+                                            {{ user?.status?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}
                                         </span>
                                     </td>
                                     <td class="py-3 px-4">{{ formatDate(user.last_login_at) }}</td>
