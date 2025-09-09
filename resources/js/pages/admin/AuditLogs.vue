@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3'
-import { ref } from 'vue'
+import { ref, h } from 'vue'
 
 import AppLayout from '@/layouts/AppLayout.vue'
 import AdminLayout from '@/layouts/admin/Layout.vue'
@@ -9,7 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@/components/ui/badge/index'
+import DataTable from '@/components/ui/data-table/DataTable.vue'
+import type { ColumnDef } from '@tanstack/vue-table'
 import admin from '@/routes/admin'
 
 interface User { id: number; name?: string | null; email?: string | null }
@@ -36,13 +38,17 @@ const qLogName = ref(props.applied?.log_name ?? '')
 const qEvent = ref(props.applied?.event ?? '')
 const qCauserType = ref(props.applied?.causer_type ?? '')
 const qCauserId = ref(props.applied?.causer_id ?? '')
+const sortField = ref<string>('created_at')
+const sortDirection = ref<'asc' | 'desc'>('desc')
 
 function applyFilters() {
   router.get(admin.auditLogs.index.url({ query: {
     log_name: qLogName.value || undefined,
     event: qEvent.value || undefined,
     causer_type: qCauserType.value || undefined,
-    causer_id: qCauserId.value || undefined,
+  causer_id: qCauserId.value || undefined,
+  sort: sortField.value,
+  direction: sortDirection.value,
   }}), {}, { preserveState: true, preserveScroll: true })
 }
 
@@ -53,6 +59,58 @@ function resetFilters() {
   qCauserId.value = ''
   applyFilters()
 }
+
+function onSort(field: string) {
+  if (sortField.value === field) {
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortField.value = field
+    sortDirection.value = 'asc'
+  }
+  applyFilters()
+}
+
+type ActivityRow = Activity
+
+const columns: ColumnDef<ActivityRow, any>[] = [
+  {
+    accessorKey: 'created_at',
+    header: 'Time',
+    meta: { sortable: true, sortField: 'created_at' },
+    cell: ({ row }) => new Date(row.original.created_at).toLocaleString(),
+  },
+  {
+    id: 'log_name',
+    header: 'Log',
+    meta: { sortable: true, sortField: 'log_name' },
+    cell: ({ row }) => h(Badge, { variant: 'secondary' }, { default: () => row.original.log_name ?? '' }),
+  },
+  {
+    id: 'event',
+    header: 'Event',
+    meta: { sortable: true, sortField: 'description' },
+    cell: ({ row }) => row.original.description ?? '',
+  },
+  {
+    id: 'causer',
+    header: 'Causer',
+    cell: ({ row }) => {
+      const c = row.original.causer
+      if (!c) return h('span', { class: 'text-muted-foreground' }, '—')
+      return c.name || c.email || `User #${c.id}`
+    },
+  },
+  {
+    id: 'subject',
+    header: 'Subject',
+    cell: ({ row }) => {
+      const s = row.original.subject
+      if (!s) return h('span', { class: 'text-muted-foreground' }, '—')
+      const type = (s.type ?? '').split('\\').pop()
+      return `${type} #${s.id}`
+    },
+  },
+]
 </script>
 
 <template>
@@ -107,32 +165,14 @@ function resetFilters() {
           </CardHeader>
           <CardContent>
             <div class="overflow-x-auto">
-              <table class="min-w-full border-collapse">
-                <thead>
-                  <tr class="border-b text-left">
-                    <th class="py-2 px-3">Time</th>
-                    <th class="py-2 px-3">Log</th>
-                    <th class="py-2 px-3">Event</th>
-                    <th class="py-2 px-3">Causer</th>
-                    <th class="py-2 px-3">Subject</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="item in props.logs.data" :key="item.id" class="border-b hover:bg-muted/40">
-                    <td class="py-2 px-3 text-sm">{{ new Date(item.created_at).toLocaleString() }}</td>
-                    <td class="py-2 px-3"><Badge variant="secondary">{{ item.log_name }}</Badge></td>
-                    <td class="py-2 px-3">{{ item.description }}</td>
-                    <td class="py-2 px-3 text-sm">
-                      <span v-if="item.causer">{{ item.causer.name || item.causer.email || `User #${item.causer.id}` }}</span>
-                      <span v-else class="text-muted-foreground">—</span>
-                    </td>
-                    <td class="py-2 px-3 text-sm">
-                      <span v-if="item.subject">{{ item.subject?.type?.split('\\').pop() }} #{{ item.subject?.id }}</span>
-                      <span v-else class="text-muted-foreground">—</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+              <DataTable
+                :columns="columns"
+                :data="props.logs.data as any[]"
+                :sort-field="sortField"
+                :sort-direction="sortDirection"
+                @sort="onSort"
+                empty-text="No activity found"
+              />
             </div>
 
             <!-- Simple pagination (uses server-provided links if needed later) -->
