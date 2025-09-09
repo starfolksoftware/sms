@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { index, store, update, destroy, invite, resendInvite as resendInviteRoute } from '@/routes/admin/users';
 
 // Types
@@ -507,41 +508,37 @@ const editStatusChecked = computed<boolean>({
                 </CardHeader>
                 <CardContent>
                     <div class="overflow-x-auto">
-                        <table class="min-w-full">
-                            <thead>
-                                <tr class="border-b">
-                                    <th class="text-left py-3 px-4 cursor-pointer" @click="sortBy('name')">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead class="cursor-pointer" @click="sortBy('name')">
                                         Name
                                         <span v-if="searchForm.sort === 'name'">
                                             {{ searchForm.direction === 'asc' ? '↑' : '↓' }}
                                         </span>
-                                    </th>
-                                    <th class="text-left py-3 px-4 cursor-pointer" @click="sortBy('email')">
+                                    </TableHead>
+                                    <TableHead class="cursor-pointer" @click="sortBy('email')">
                                         Email
                                         <span v-if="searchForm.sort === 'email'">
                                             {{ searchForm.direction === 'asc' ? '↑' : '↓' }}
                                         </span>
-                                    </th>
-                                    <th class="text-left py-3 px-4">Roles</th>
-                                    <th class="text-left py-3 px-4">Status</th>
-                                    <th class="text-left py-3 px-4 cursor-pointer" @click="sortBy('last_login_at')">
+                                    </TableHead>
+                                    <TableHead>Roles</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead class="cursor-pointer" @click="sortBy('last_login_at')">
                                         Last Login
                                         <span v-if="searchForm.sort === 'last_login_at'">
                                             {{ searchForm.direction === 'asc' ? '↑' : '↓' }}
                                         </span>
-                                    </th>
-                                    <th class="text-left py-3 px-4">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr
-                                    v-for="user in users.data"
-                                    :key="user.id"
-                                    class="border-b hover:bg-gray-50 dark:hover:bg-gray-800"
-                                >
-                                    <td class="py-3 px-4 font-medium">{{ user.name }}</td>
-                                    <td class="py-3 px-4">{{ user.email }}</td>
-                                    <td class="py-3 px-4">
+                                    </TableHead>
+                                    <TableHead>Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow v-for="user in users.data" :key="user.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
+                                    <TableCell class="font-medium">{{ user.name }}</TableCell>
+                                    <TableCell>{{ user.email }}</TableCell>
+                                    <TableCell>
                                         <div class="flex flex-wrap gap-1">
                                             <span
                                                 v-for="role in user.roles"
@@ -551,47 +548,28 @@ const editStatusChecked = computed<boolean>({
                                                 {{ role.name }}
                                             </span>
                                         </div>
-                                    </td>
-                                    <td class="py-3 px-4">
+                                    </TableCell>
+                                    <TableCell>
                                         <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', getStatusBadgeClasses(user.status ?? '')]">
                                             {{ getStatusLabel(user.status) }}
                                         </span>
-                                    </td>
-                                    <td class="py-3 px-4">{{ formatDate(user.last_login_at) }}</td>
-                                    <td class="py-3 px-4">
+                                    </TableCell>
+                                    <TableCell>{{ formatDate(user.last_login_at) }}</TableCell>
+                                    <TableCell>
                                         <div class="flex gap-2">
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                @click="openEditDialog(user)"
-                                            >
-                                                Edit
-                                            </Button>
-                                            <Button
-                                                v-if="user.status === 'pending_invite'"
-                                                size="sm"
-                                                variant="outline"
-                                                @click="confirmResend(user)"
-                                            >
-                                                Resend
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="destructive"
-                                                @click="confirmDelete(user)"
-                                            >
-                                                Delete
-                                            </Button>
+                                            <Button size="sm" variant="outline" @click="openEditDialog(user)">Edit</Button>
+                                            <Button v-if="user.status === 'pending_invite'" size="sm" variant="outline" @click="confirmResend(user)">Resend</Button>
+                                            <Button size="sm" variant="destructive" @click="confirmDelete(user)">Delete</Button>
                                         </div>
-                                    </td>
-                                </tr>
-                                <tr v-if="users.data.length === 0">
-                                    <td colspan="6" class="py-8 px-4 text-center text-gray-500">
+                                    </TableCell>
+                                </TableRow>
+                                <TableRow v-if="users.data.length === 0">
+                                    <TableCell colspan="6" class="py-8 px-4 text-center text-gray-500">
                                         No users found
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                    </TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
                     </div>
 
                     <!-- Pagination -->
