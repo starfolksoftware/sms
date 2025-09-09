@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\UserStatus;
+use App\Notifications\UserInvitationNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -86,11 +87,14 @@ class User extends Authenticatable
      */
     public function markAsPendingInvite(): void
     {
-        $this->update([
+    $this->update([
             'status' => UserStatus::PendingInvite,
             'invitation_token' => \Illuminate\Support\Str::random(32),
             'invitation_sent_at' => now(),
         ]);
+
+    // Send invitation email
+    $this->notify(new UserInvitationNotification($this));
     }
 
     /**
