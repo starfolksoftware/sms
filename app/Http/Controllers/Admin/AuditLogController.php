@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Spatie\Activitylog\Models\Activity;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class AuditLogController extends Controller
 {
@@ -36,17 +38,22 @@ class AuditLogController extends Controller
                 'filters' => [
                     'log_names' => Activity::distinct()->pluck('log_name')->filter(),
                     'events' => Activity::distinct()->pluck('description')->filter(),
-                ]
+                ],
             ]);
         }
 
-        return response()->json([
-            'message' => 'Audit logs retrieved successfully',
-            'data' => $logs,
+        return Inertia::render('admin/AuditLogs', [
+            'logs' => $logs,
             'filters' => [
-                'log_names' => Activity::distinct()->pluck('log_name')->filter(),
-                'events' => Activity::distinct()->pluck('description')->filter(),
-            ]
+                'log_names' => Activity::distinct()->pluck('log_name')->filter()->values(),
+                'events' => Activity::distinct()->pluck('description')->filter()->values(),
+            ],
+            'applied' => [
+                'log_name' => $request->log_name,
+                'event' => $request->event,
+                'causer_type' => $request->causer_type,
+                'causer_id' => $request->causer_id,
+            ],
         ]);
     }
 
@@ -70,7 +77,8 @@ class AuditLogController extends Controller
      */
     protected function checkAuthorization(string $permission): void
     {
-        if (!auth()->user()->can($permission)) {
+        $user = request()->user();
+        if (!$user || !$user->can($permission)) {
             abort(403, 'Unauthorized access to audit logs.');
         }
     }
