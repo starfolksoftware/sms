@@ -68,6 +68,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('products', ProductController::class)
         ->except(['create', 'edit'])
         ->middleware('permission:manage_products');
+
+    // Audit log routes - admin only
+    Route::middleware('permission:view_audit_logs')->prefix('admin')->group(function () {
+        Route::get('/audit-logs', [App\Http\Controllers\Admin\AuditLogController::class, 'index'])->name('admin.audit-logs.index');
+        Route::get('/audit-logs/{activity}', [App\Http\Controllers\Admin\AuditLogController::class, 'show'])->name('admin.audit-logs.show');
+    });
 });
 
 require __DIR__.'/settings.php';
