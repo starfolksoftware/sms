@@ -5,37 +5,24 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { toUrl, urlIsActive } from '@/lib/utils'
 import { type NavItem } from '@/types'
-import { Link, usePage } from '@inertiajs/vue3'
+import { Link } from '@inertiajs/vue3'
 
 interface Props {
   showSidebar?: boolean
   title?: string
   description?: string
+  sidebarNavItems?: NavItem[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showSidebar: true,
   title: 'Admin',
-  description: 'Manage your platform'
+  description: 'Manage your platform',
+  sidebarNavItems: () => []
 })
 
-const page = usePage()
-
-// Admin navigation items - only show if user has appropriate permissions
-const sidebarNavItems = computed(() => {
-  const items: NavItem[] = []
-  const permissions: string[] = (page.props.auth as any)?.permissions ?? []
-  
-  // Users management - requires manage_users permission
-  if (permissions.includes('manage_users')) {
-    items.push({
-      title: 'Users',
-      href: { url: '/admin/users', method: 'get' }
-    })
-  }
-  
-  return items
-})
+// Sidebar items are provided by the parent (user land)
+const sidebarNavItems = computed<NavItem[]>(() => props.sidebarNavItems ?? [])
 
 const currentPath = typeof window !== 'undefined' ? window.location.pathname : ''
 </script>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, reactive, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AdminLayout from '@/layouts/admin/Layout.vue';
@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { index, store, update, destroy, invite, resendInvite as resendInviteRoute } from '@/routes/admin/users';
 
 // Types
@@ -48,6 +49,8 @@ const isCreateDialogOpen = ref(false);
 const isEditDialogOpen = ref(false);
 const isInviteDialogOpen = ref(false);
 const editingUser = ref<User | null>(null);
+const isDeleteDialogOpen = ref(false);
+const userToDelete = ref<User | null>(null);
 // Search and filter state
 const searchForm = useForm<SearchForm>({
     search: props.filters?.search || '',
@@ -133,8 +136,16 @@ function openEditDialog(user: User): void {
     editingUser.value = user;
     editForm.name = user.name;
     editForm.email = user.email;
-        editForm.status = user.status ?? '';
+    {
+        const s = (user.status ?? '').toLowerCase();
+        editForm.status = s === 'active' ? 'active' : (s === 'deactivated' ? 'deactivated' : '');
+    }
     editForm.roles = Array.isArray(user.roles) ? user.roles.map((role) => role.name) : [];
+    // Initialize edit role state map based on available roles
+    Object.keys(editRoleState).forEach((k) => delete editRoleState[k]);
+    for (const r of props.roles) {
+        editRoleState[r.name] = editForm.roles.includes(r.name);
+    }
     isEditDialogOpen.value = true;
 }
 
@@ -169,12 +180,20 @@ function resendInvite(user: User): void {
 }
 
 // Delete user
-function deleteUser(user: User): void {
-    if (confirm(`Are you sure you want to delete "${user.name}"? This action cannot be undone.`)) {
-        router.delete(destroy(Number(user.id)).url, {
-            preserveScroll: true,
-        });
-    }
+function confirmDelete(user: User): void {
+    userToDelete.value = user;
+    isDeleteDialogOpen.value = true;
+}
+
+function performDelete(): void {
+    if (!userToDelete.value) return;
+    router.delete(destroy(Number(userToDelete.value.id)).url, {
+        preserveScroll: true,
+        onFinish: () => {
+            isDeleteDialogOpen.value = false;
+            userToDelete.value = null;
+        },
+    });
 }
 
 // Utility functions
@@ -219,14 +238,11 @@ function handleCreateRoleToggle(roleName: string, checked: boolean): void {
     }
 }
 
-function handleEditRoleToggle(roleName: string, checked: boolean): void {
-    if (checked) {
-        if (!editForm.roles.includes(roleName)) editForm.roles.push(roleName);
-    } else {
-        const idx = editForm.roles.indexOf(roleName);
-        if (idx > -1) editForm.roles.splice(idx, 1);
-    }
-}
+// Edit role state map and sync (like Roles.vue)
+const editRoleState = reactive<Record<string, boolean>>({});
+watch(editRoleState, () => {
+    editForm.roles = Object.keys(editRoleState).filter((k) => editRoleState[k]);
+}, { deep: true });
 
 // Computed
 const filteredStatusOptions = computed(() => [
@@ -242,6 +258,14 @@ const filteredRoleOptions = computed(() => [
         ? props.roles.map((role) => ({ value: role.name, label: role.name }))
         : [])
 ]);
+
+// removed set approach; using editRoleState + v-model instead
+
+// Switch expects v-model (modelValue) boolean — map to status string
+const editStatusChecked = computed<boolean>({
+    get: () => editForm.status === 'active',
+    set: (val: boolean) => { editForm.status = val ? 'active' : 'deactivated'; },
+});
 </script>
 
 <template>
@@ -528,7 +552,7 @@ const filteredRoleOptions = computed(() => [
                                             <Button
                                                 size="sm"
                                                 variant="destructive"
-                                                @click="deleteUser(user)"
+                                                @click="confirmDelete(user)"
                                             >
                                                 Delete
                                             </Button>
@@ -602,14 +626,11 @@ const filteredRoleOptions = computed(() => [
                             </div>
                         </div>
                         <div v-if="editingUser.status !== 'pending_invite'">
-                            <Label for="edit-status">Status</Label>
-                            <select 
-                                v-model="editForm.status"
-                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
-                            >
-                                <option value="active">Active</option>
-                                <option value="deactivated">Deactivated</option>
-                            </select>
+                            <Label>Status</Label>
+                            <div class="flex items-center gap-3 pt-2">
+                                <Switch v-model="editStatusChecked" />
+                                <span class="text-sm text-muted-foreground">{{ editStatusChecked ? 'Active' : 'Deactivated' }}</span>
+                            </div>
                             <div v-if="editForm.errors.status" class="text-red-600 text-sm mt-1">
                                 {{ editForm.errors.status }}
                             </div>
@@ -624,8 +645,7 @@ const filteredRoleOptions = computed(() => [
                                 >
                                     <Checkbox
                                         :id="`edit-role-${role.id}`"
-                                        :checked="editForm.roles.includes(role.name)"
-                                        @update:checked="handleEditRoleToggle(role.name, $event)"
+                                        v-model="editRoleState[role.name]"
                                     />
                                     <Label :for="`edit-role-${role.id}`">{{ role.name }}</Label>
                                 </div>
@@ -643,6 +663,25 @@ const filteredRoleOptions = computed(() => [
                             </Button>
                         </div>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            <!-- Delete Confirmation Dialog -->
+            <Dialog v-model:open="isDeleteDialogOpen">
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete User</DialogTitle>
+                        <DialogDescription>
+                            This action cannot be undone. This will permanently delete
+                            <strong>{{ userToDelete?.name }}</strong> and remove their data.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div class="flex justify-end gap-2 mt-4">
+                        <Button variant="outline" type="button" @click="isDeleteDialogOpen = false">Cancel</Button>
+                        <Button variant="destructive" type="button" @click="performDelete">
+                            Confirm Delete
+                        </Button>
+                    </div>
                 </DialogContent>
             </Dialog>
         </AdminLayout>
