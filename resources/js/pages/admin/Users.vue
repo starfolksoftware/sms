@@ -51,6 +51,8 @@ const isInviteDialogOpen = ref(false);
 const editingUser = ref<User | null>(null);
 const isDeleteDialogOpen = ref(false);
 const userToDelete = ref<User | null>(null);
+const isResendDialogOpen = ref(false);
+const userToResend = ref<User | null>(null);
 // Search and filter state
 const searchForm = useForm<SearchForm>({
     search: props.filters?.search || '',
@@ -177,6 +179,20 @@ function resendInvite(user: User): void {
     router.post(resendInviteRoute(Number(user.id)).url, {}, {
         preserveScroll: true,
     });
+}
+
+function confirmResend(user: User): void {
+    userToResend.value = user;
+    isResendDialogOpen.value = true;
+}
+
+function performResend(): void {
+    if (!userToResend.value) {
+        return;
+    }
+    resendInvite(userToResend.value);
+    isResendDialogOpen.value = false;
+    userToResend.value = null;
 }
 
 // Delete user
@@ -545,7 +561,7 @@ const editStatusChecked = computed<boolean>({
                                                 v-if="user.status === 'pending_invite'"
                                                 size="sm"
                                                 variant="outline"
-                                                @click="resendInvite(user)"
+                                                @click="confirmResend(user)"
                                             >
                                                 Resend
                                             </Button>
@@ -681,6 +697,23 @@ const editStatusChecked = computed<boolean>({
                         <Button variant="destructive" type="button" @click="performDelete">
                             Confirm Delete
                         </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            <!-- Resend Invitation Confirmation Dialog -->
+            <Dialog v-model:open="isResendDialogOpen">
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Resend Invitation</DialogTitle>
+                        <DialogDescription>
+                            We'll resend the invitation email to
+                            <strong>{{ userToResend?.email }}</strong>.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div class="flex justify-end gap-2 mt-4">
+                        <Button variant="outline" type="button" @click="isResendDialogOpen = false">Cancel</Button>
+                        <Button type="button" @click="performResend">Confirm Resend</Button>
                     </div>
                 </DialogContent>
             </Dialog>
