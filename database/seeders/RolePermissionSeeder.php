@@ -47,16 +47,17 @@ class RolePermissionSeeder extends Seeder
             'create_campaigns',
             'manage_campaigns',
             'view_analytics',
+            'view_audit_logs',
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission]);
         }
 
         // Create roles and assign permissions
-        $adminRole = Role::create(['name' => 'admin']);
-        $salesRole = Role::create(['name' => 'sales']);
-        $marketingRole = Role::create(['name' => 'marketing']);
+        $adminRole = Role::firstOrCreate(['name' => 'admin']);
+        $salesRole = Role::firstOrCreate(['name' => 'sales']);
+        $marketingRole = Role::firstOrCreate(['name' => 'marketing']);
 
         // Admin gets all permissions
         $adminRole->givePermissionTo(Permission::all());

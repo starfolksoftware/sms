@@ -2,6 +2,11 @@
 
 namespace App\Providers;
 
+use App\Events\DataExported;
+use App\Listeners\LogDataExport;
+use App\Listeners\LogFailedLogin;
+use App\Listeners\LogSuccessfulLogin;
+use App\Listeners\LogSuccessfulLogout;
 use App\Models\Contact;
 use App\Models\Deal;
 use App\Models\Product;
@@ -10,6 +15,10 @@ use App\Policies\ContactPolicy;
 use App\Policies\DealPolicy;
 use App\Policies\ProductPolicy;
 use App\Policies\TaskPolicy;
+use Illuminate\Auth\Events\Failed;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Logout;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -41,6 +50,18 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerPolicies();
+        $this->registerEventListeners();
+    }
+
+    /**
+     * Register event listeners for audit logging.
+     */
+    public function registerEventListeners(): void
+    {
+        Event::listen(Login::class, LogSuccessfulLogin::class);
+        Event::listen(Logout::class, LogSuccessfulLogout::class);
+        Event::listen(Failed::class, LogFailedLogin::class);
+        Event::listen(DataExported::class, LogDataExport::class);
     }
 
     /**
