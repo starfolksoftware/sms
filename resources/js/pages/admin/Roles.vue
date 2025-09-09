@@ -11,8 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
-import SettingsLayout from '@/layouts/settings/Layout.vue';
-import { index, store, update, destroy } from '@/routes/roles';
+import AdminLayout from '@/layouts/admin/Layout.vue';
+import { index, store, update, destroy } from '@/routes/admin/roles/index';
 import { type BreadcrumbItem } from '@/types';
 
 interface Permission {
@@ -178,7 +178,7 @@ function toggleCategory(cat: string) {
     <AppLayout :breadcrumbs="breadcrumbItems">
         <Head title="Role Management" />
 
-        <SettingsLayout>
+        <AdminLayout>
             <div class="space-y-6">
                 <div class="flex items-center justify-between">
                     <HeadingSmall 
@@ -429,6 +429,6 @@ function toggleCategory(cat: string) {
                     </div>
                 </DialogContent>
             </Dialog>
-        </SettingsLayout>
+        </AdminLayout>
     </AppLayout>
 </template>

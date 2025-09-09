@@ -6,11 +6,9 @@ import { toUrl, urlIsActive } from '@/lib/utils';
 import { appearance } from '@/routes';
 import { edit as editPassword } from '@/routes/password';
 import { edit } from '@/routes/profile';
-import { index as roles } from '@/routes/roles';
 import { type NavItem } from '@/types';
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 
-const page = usePage();
 
 const sidebarNavItems: NavItem[] = [
     {
@@ -27,13 +25,7 @@ const sidebarNavItems: NavItem[] = [
     },
 ];
 
-// Add roles navigation only for users with manage_roles permission or admin role
-const user = page.props.auth?.user as any;
-const permissions: string[] = (page.props.auth as any)?.permissions ?? [];
-const isAdmin = Array.isArray(user?.roles) && user.roles.some((r: any) => r.name === 'admin');
-if (isAdmin || permissions.includes('manage_roles')) {
-    sidebarNavItems.push({ title: 'Roles', href: roles() });
-}
+// Roles moved under Admin section
 
 const currentPath = typeof window !== undefined ? window.location.pathname : '';
 </script>

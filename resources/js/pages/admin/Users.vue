@@ -3,6 +3,7 @@ import { ref, computed, reactive, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AdminLayout from '@/layouts/admin/Layout.vue';
+import admin from '@/routes/admin';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -288,7 +289,16 @@ const editStatusChecked = computed<boolean>({
     <Head title="User Management" />
     
     <AppLayout>
-        <AdminLayout title="User Management" description="Manage users, roles, and invitations">
+        <AdminLayout
+            title="User Management"
+            description="Manage users, roles, and invitations"
+            :sidebar-nav-items="[
+                { title: 'Admin Home', href: admin.dashboard().url },
+                { title: 'Users', href: admin.users.index().url },
+                { title: 'Roles', href: admin.roles.index().url },
+                { title: 'Audit Logs', href: admin.auditLogs.index().url },
+            ]"
+        >
             <!-- Search and Filters -->
             <Card class="mb-6">
                 <CardHeader>

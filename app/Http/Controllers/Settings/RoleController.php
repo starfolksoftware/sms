@@ -22,7 +22,7 @@ class RoleController extends Controller
         $roles = Role::with('permissions')->get();
         $permissions = Permission::all();
 
-        return Inertia::render('settings/Roles', [
+    return Inertia::render('admin/Roles', [
             'roles' => $roles,
             'permissions' => $permissions,
         ]);
@@ -35,9 +35,7 @@ class RoleController extends Controller
     {
         $role = Role::create(['name' => $request->validated('name')]);
 
-        if ($request->has('permissions')) {
-            $role->syncPermissions($request->validated('permissions'));
-        }
+    $role->syncPermissions($request->validated('permissions', []));
 
         return back()->with('message', 'Role created successfully.');
     }
@@ -49,7 +47,7 @@ class RoleController extends Controller
     {
         $role->update(['name' => $request->validated('name')]);
 
-        $role->syncPermissions($request->validated('permissions', []));
+    $role->syncPermissions($request->validated('permissions', []));
 
         return back()->with('message', 'Role updated successfully.');
     }

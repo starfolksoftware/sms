@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import admin from '@/routes/admin'
 import Heading from '@/components/Heading.vue'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -22,7 +23,16 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 // Sidebar items are provided by the parent (user land)
-const sidebarNavItems = computed<NavItem[]>(() => props.sidebarNavItems ?? [])
+const sidebarNavItems = computed<NavItem[]>(() => {
+  if (props.sidebarNavItems && props.sidebarNavItems.length) return props.sidebarNavItems
+  // Default admin links when none provided
+  return [
+    { title: 'Admin Home', href: admin.dashboard().url },
+    { title: 'Users', href: admin.users.index().url },
+    { title: 'Roles', href: admin.roles.index().url },
+    { title: 'Audit Logs', href: admin.auditLogs.index().url },
+  ]
+})
 
 const currentPath = typeof window !== 'undefined' ? window.location.pathname : ''
 </script>

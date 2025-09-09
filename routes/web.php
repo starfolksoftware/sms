@@ -19,12 +19,15 @@ Route::get('dashboard', function () {
 // Permission-based route examples
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/admin', function () {
-        return response()->json([
-            'message' => 'Welcome to admin area',
-            'user' => Auth::user()->name,
-            'permissions' => Auth::user()->getAllPermissions()->pluck('name'),
+        // Simple admin dashboard with basic widgets
+        return Inertia::render('admin/Index', [
+            'stats' => [
+                'users' => \App\Models\User::query()->count(),
+                'roles' => \Spatie\Permission\Models\Role::query()->count(),
+                'permissions' => \Spatie\Permission\Models\Permission::query()->count(),
+            ],
         ]);
-    })->middleware('permission:manage_users')->name('admin.dashboard');
+    })->middleware('permission:manage_users|manage_roles')->name('admin.dashboard');
 
     Route::get('/sales', function () {
         return response()->json([
@@ -73,6 +76,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('permission:view_audit_logs')->prefix('admin')->group(function () {
         Route::get('/audit-logs', [App\Http\Controllers\Admin\AuditLogController::class, 'index'])->name('admin.audit-logs.index');
         Route::get('/audit-logs/{activity}', [App\Http\Controllers\Admin\AuditLogController::class, 'show'])->name('admin.audit-logs.show');
+    });
+
+    // Role management routes - admin only (moved from settings)
+    Route::middleware('permission:manage_roles')->prefix('admin')->group(function () {
+        Route::get('/roles', [App\Http\Controllers\Settings\RoleController::class, 'index'])->name('admin.roles.index');
+        Route::post('/roles', [App\Http\Controllers\Settings\RoleController::class, 'store'])->name('admin.roles.store');
+        Route::put('/roles/{role}', [App\Http\Controllers\Settings\RoleController::class, 'update'])->name('admin.roles.update');
+        Route::delete('/roles/{role}', [App\Http\Controllers\Settings\RoleController::class, 'destroy'])->name('admin.roles.destroy');
     });
 });
 

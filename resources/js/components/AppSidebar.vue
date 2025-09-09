@@ -7,7 +7,7 @@ import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Users } from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, Shield } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
 
@@ -29,12 +29,12 @@ const mainNavItems = computed((): NavItem[] => {
         },
     ];
     
-    // Add User Management link if user has manage_users permission
-    if (permissions.value.includes('manage_users')) {
+    // Add Admin link if user has any admin-related permission
+    if (permissions.value.includes('manage_users') || permissions.value.includes('manage_roles') || permissions.value.includes('view_audit_logs')) {
         items.push({
-            title: 'User Management',
-            href: admin.users.index(),
-            icon: Users,
+            title: 'Admin',
+            href: admin.dashboard().url,
+            icon: Shield,
         });
     }
     
