@@ -3,6 +3,7 @@
 use App\Models\User;
 use App\Notifications\UserInvitationNotification;
 use Illuminate\Support\Facades\Notification;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 it('sends a notification when inviting a user', function () {
@@ -10,8 +11,10 @@ it('sends a notification when inviting a user', function () {
 
     // acting user with permission
     $admin = User::factory()->create();
-    Role::findOrCreate('admin');
-    $admin->assignRole('admin');
+    $role = Role::findOrCreate('admin');
+    $perm = Permission::findOrCreate('manage_users');
+    $role->givePermissionTo($perm);
+    $admin->assignRole($role);
 
     $this->actingAs($admin);
 
@@ -34,8 +37,10 @@ it('sends a notification when creating with invitation checked', function () {
     Notification::fake();
 
     $admin = User::factory()->create();
-    Role::findOrCreate('admin');
-    $admin->assignRole('admin');
+    $role = Role::findOrCreate('admin');
+    $perm = Permission::findOrCreate('manage_users');
+    $role->givePermissionTo($perm);
+    $admin->assignRole($role);
 
     $this->actingAs($admin);
 
