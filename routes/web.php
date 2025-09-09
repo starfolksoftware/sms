@@ -4,6 +4,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DealController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\TaskController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -20,24 +21,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/admin', function () {
         return response()->json([
             'message' => 'Welcome to admin area',
-            'user' => auth()->user()->name,
-            'permissions' => auth()->user()->getAllPermissions()->pluck('name'),
+            'user' => Auth::user()->name,
+            'permissions' => Auth::user()->getAllPermissions()->pluck('name'),
         ]);
     })->middleware('permission:manage_users')->name('admin.dashboard');
 
     Route::get('/sales', function () {
         return response()->json([
             'message' => 'Welcome to sales area',
-            'user' => auth()->user()->name,
-            'permissions' => auth()->user()->getAllPermissions()->pluck('name'),
+            'user' => Auth::user()->name,
+            'permissions' => Auth::user()->getAllPermissions()->pluck('name'),
         ]);
     })->middleware('permission:manage_clients')->name('sales.dashboard');
 
     Route::get('/marketing', function () {
         return response()->json([
             'message' => 'Welcome to marketing area',
-            'user' => auth()->user()->name,
-            'permissions' => auth()->user()->getAllPermissions()->pluck('name'),
+            'user' => Auth::user()->name,
+            'permissions' => Auth::user()->getAllPermissions()->pluck('name'),
         ]);
     })->middleware('permission:create_campaigns')->name('marketing.dashboard');
 });
