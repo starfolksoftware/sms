@@ -3,7 +3,6 @@
 namespace App\Listeners;
 
 use App\Events\DataExported;
-use Spatie\Activitylog\Facades\LogActivity;
 
 class LogDataExport
 {
@@ -14,7 +13,7 @@ class LogDataExport
     {
         $request = request();
         
-        LogActivity::useLog('data_ops')
+        activity('data_ops')
             ->causedBy(auth()->user())
             ->withProperties([
                 'ip' => $request?->ip(),

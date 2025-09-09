@@ -20,7 +20,7 @@ class AuditLogController extends Controller
                 $query->where('log_name', $logName)
             )
             ->when($request->event, fn($query, $event) => 
-                $query->where('event', $event)
+                $query->where('description', $event)
             )
             ->when($request->causer_type && $request->causer_id, fn($query) => 
                 $query->where('causer_type', $request->causer_type)
@@ -30,7 +30,14 @@ class AuditLogController extends Controller
             ->paginate(50);
 
         if ($request->expectsJson()) {
-            return response()->json($logs);
+            return response()->json([
+                'message' => 'Audit logs retrieved successfully',
+                'data' => $logs,
+                'filters' => [
+                    'log_names' => Activity::distinct()->pluck('log_name')->filter(),
+                    'events' => Activity::distinct()->pluck('description')->filter(),
+                ]
+            ]);
         }
 
         return response()->json([
@@ -38,7 +45,7 @@ class AuditLogController extends Controller
             'data' => $logs,
             'filters' => [
                 'log_names' => Activity::distinct()->pluck('log_name')->filter(),
-                'events' => Activity::distinct()->pluck('event')->filter(),
+                'events' => Activity::distinct()->pluck('description')->filter(),
             ]
         ]);
     }

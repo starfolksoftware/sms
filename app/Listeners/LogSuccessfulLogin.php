@@ -3,7 +3,6 @@
 namespace App\Listeners;
 
 use Illuminate\Auth\Events\Login;
-use Spatie\Activitylog\Facades\LogActivity;
 
 class LogSuccessfulLogin
 {
@@ -14,7 +13,7 @@ class LogSuccessfulLogin
     {
         $request = request();
         
-        LogActivity::useLog('security')
+        activity('security')
             ->causedBy($event->user)
             ->withProperties([
                 'ip' => $request->ip(),

@@ -3,7 +3,6 @@
 namespace App\Listeners;
 
 use Illuminate\Auth\Events\Logout;
-use Spatie\Activitylog\Facades\LogActivity;
 
 class LogSuccessfulLogout
 {
@@ -14,7 +13,7 @@ class LogSuccessfulLogout
     {
         $request = request();
         
-        LogActivity::useLog('security')
+        activity('security')
             ->causedBy($event->user)
             ->withProperties([
                 'ip' => $request->ip(),

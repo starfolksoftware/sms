@@ -3,7 +3,6 @@
 namespace App\Listeners;
 
 use Illuminate\Auth\Events\Failed;
-use Spatie\Activitylog\Facades\LogActivity;
 
 class LogFailedLogin
 {
@@ -14,7 +13,7 @@ class LogFailedLogin
     {
         $request = request();
         
-        LogActivity::useLog('security')
+        activity('security')
             ->causedBy($event->user) // May be null for failed attempts
             ->withProperties([
                 'ip' => $request->ip(),
