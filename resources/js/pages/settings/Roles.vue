@@ -160,7 +160,8 @@ const permissionCategories = {
         p.name.includes('setting') ||
         p.name.includes('dashboard') ||
         p.name.includes('report') ||
-        p.name.includes('analytics')
+        p.name.includes('analytics') ||
+        p.name.includes('audit')
     ),
 };
 
