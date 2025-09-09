@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, usePage } from '@inertiajs/vue3'
+import { Head, Link } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import AdminLayout from '@/layouts/admin/Layout.vue'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -19,13 +19,7 @@ const props = withDefaults(defineProps<Props>(), {
   stats: () => ({ users: 0, roles: 0, permissions: 0 }),
 })
 
-const page = usePage()
-const permissions: string[] = (page.props.auth as any)?.permissions ?? []
-
 const adminNav: { title: string; href: string }[] = []
-if (permissions.includes('manage_users')) adminNav.push({ title: 'Users', href: admin.users.index().url })
-if (permissions.includes('manage_roles')) adminNav.push({ title: 'Roles', href: admin.roles.index().url })
-if (permissions.includes('view_audit_logs')) adminNav.push({ title: 'Audit Logs', href: admin.auditLogs.index().url })
 </script>
 
 <template>

@@ -27,7 +27,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 'permissions' => \Spatie\Permission\Models\Permission::query()->count(),
             ],
         ]);
-    })->middleware('permission:manage_users|manage_roles')->name('admin.dashboard');
+    })->middleware('role:admin')->name('admin.dashboard');
 
     Route::get('/sales', function () {
         return response()->json([

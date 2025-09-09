@@ -27,7 +27,7 @@ const sidebarNavItems = computed<NavItem[]>(() => {
   if (props.sidebarNavItems && props.sidebarNavItems.length) return props.sidebarNavItems
   // Default admin links when none provided
   return [
-    { title: 'Admin Home', href: admin.dashboard().url },
+    { title: 'Home', href: admin.dashboard().url },
     { title: 'Users', href: admin.users.index().url },
     { title: 'Roles', href: admin.roles.index().url },
     { title: 'Audit Logs', href: admin.auditLogs.index().url },
