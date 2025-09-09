@@ -6,6 +6,7 @@ use App\Enums\UserStatus;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -114,7 +115,7 @@ class UserController extends Controller
         ]);
 
         // Prevent admin from deactivating themselves
-        if ($user->id === auth()->id() && isset($validated['status']) && $validated['status'] === UserStatus::Deactivated->value) {
+        if ($user->id === Auth::id() && isset($validated['status']) && $validated['status'] === UserStatus::Deactivated->value) {
             return back()->withErrors(['status' => 'Cannot deactivate your own account.']);
         }
 
@@ -176,7 +177,7 @@ class UserController extends Controller
     public function destroy(User $user): RedirectResponse
     {
         // Prevent admin from deleting themselves
-        if ($user->id === auth()->id()) {
+        if ($user->id === Auth::id()) {
             return back()->withErrors(['user' => 'Cannot delete your own account.']);
         }
 

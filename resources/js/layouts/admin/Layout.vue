@@ -30,7 +30,7 @@ const sidebarNavItems = computed(() => {
   if (permissions.includes('manage_users')) {
     items.push({
       title: 'Users',
-      href: { url: '/admin/users' }
+      href: { url: '/admin/users', method: 'get' }
     })
   }
   

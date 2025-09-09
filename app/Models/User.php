@@ -88,7 +88,7 @@ class User extends Authenticatable
     {
         $this->update([
             'status' => UserStatus::PendingInvite,
-            'invitation_token' => \Str::random(32),
+            'invitation_token' => \Illuminate\Support\Str::random(32),
             'invitation_sent_at' => now(),
         ]);
     }

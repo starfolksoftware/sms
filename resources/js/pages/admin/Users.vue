@@ -12,20 +12,44 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { index, store, update, destroy, invite, resendInvite as resendInviteRoute } from '@/routes/admin/users';
 
-const props = defineProps({
-    users: Object,
-    roles: Array,
-    filters: {
-        type: Object,
-        default: () => ({}),
-    },
+// Types
+type Role = { id: number | string; name: string };
+type User = {
+    id: number | string;
+    name: string;
+    email: string;
+    status?: string;
+    last_login_at?: string | null;
+    roles: Role[];
+};
+type Link = { url: string | null; label: string; active: boolean };
+type Paginated<T> = { data: T[]; total: number; links: Link[] };
+type SearchForm = {
+    search: string;
+    role: string;
+    status: string;
+    sort: string;
+    direction: 'asc' | 'desc';
+};
+type CreateForm = { name: string; email: string; roles: string[]; send_invitation: boolean };
+type EditForm = { name: string; email: string; status: string; roles: string[] };
+type InviteForm = { name: string; email: string; roles: string[] };
+
+const props = withDefaults(defineProps<{
+    users: Paginated<User>;
+    roles: Role[];
+    filters?: Partial<SearchForm>;
+}>(), {
+    filters: () => ({}),
 });
 
 // State management
 const isCreateDialogOpen = ref(false);
 const isEditDialogOpen = ref(false);
+const isInviteDialogOpen = ref(false);
+const editingUser = ref<User | null>(null);
 // Search and filter state
-const searchForm = useForm({
+const searchForm = useForm<SearchForm>({
     search: props.filters?.search || '',
     role: props.filters?.role || 'all',
     status: props.filters?.status || 'all',
@@ -38,30 +62,30 @@ if (searchForm.role === '') searchForm.role = 'all';
 if (searchForm.status === '') searchForm.status = 'all';
 
 // Create user form
-const createForm = useForm({
+const createForm = useForm<CreateForm>({
     name: '',
     email: '',
-    roles: [],
+    roles: [] as string[],
     send_invitation: true,
 });
 
 // Edit user form  
-const editForm = useForm({
+const editForm = useForm<EditForm>({
     name: '',
     email: '',
     status: '',
-    roles: [],
+    roles: [] as string[],
 });
 
 // Invite user form
-const inviteForm = useForm({
+const inviteForm = useForm<InviteForm>({
     name: '',
     email: '',
-    roles: [],
+    roles: [] as string[],
 });
 
 // Search and filter functionality
-function performSearch() {
+function performSearch(): void {
     const formData = { ...searchForm.data() };
     // Convert "all" values back to empty strings for backend
     if (formData.role === 'all') formData.role = '';
@@ -73,16 +97,17 @@ function performSearch() {
     });
 }
 
-function clearFilters() {
-    searchForm.reset();
-    // Reset to "all" values for the UI
+function clearFilters(): void {
+    searchForm.search = '';
     searchForm.role = 'all';
     searchForm.status = 'all';
+    searchForm.sort = 'name';
+    searchForm.direction = 'asc';
     performSearch();
 }
 
 // Sort functionality
-function sortBy(field) {
+function sortBy(field: string): void {
     if (searchForm.sort === field) {
         searchForm.direction = searchForm.direction === 'asc' ? 'desc' : 'asc';
     } else {
@@ -93,7 +118,7 @@ function sortBy(field) {
 }
 
 // Create user functionality
-function createUser() {
+function createUser(): void {
     createForm.post(store().url, {
         preserveScroll: true,
         onSuccess: () => {
@@ -104,19 +129,18 @@ function createUser() {
 }
 
 // Edit user functionality
-function openEditDialog(user) {
+function openEditDialog(user: User): void {
     editingUser.value = user;
     editForm.name = user.name;
     editForm.email = user.email;
-    editForm.status = user.status;
-    editForm.roles = user.roles.map(role => role.name);
+        editForm.status = user.status ?? '';
+    editForm.roles = Array.isArray(user.roles) ? user.roles.map((role) => role.name) : [];
     isEditDialogOpen.value = true;
 }
 
-function updateUser() {
+function updateUser(): void {
     if (!editingUser.value) return;
-    
-    editForm.put(update(editingUser.value.id).url, {
+        editForm.put(update(Number(editingUser.value.id)).url, {
         preserveScroll: true,
         onSuccess: () => {
             isEditDialogOpen.value = false;
@@ -127,7 +151,7 @@ function updateUser() {
 }
 
 // Invite user functionality
-function inviteUser() {
+function inviteUser(): void {
     inviteForm.post(invite().url, {
         preserveScroll: true,
         onSuccess: () => {
@@ -138,23 +162,23 @@ function inviteUser() {
 }
 
 // Resend invite
-function resendInvite(user) {
-    router.post(resendInviteRoute(user.id).url, {}, {
+function resendInvite(user: User): void {
+    router.post(resendInviteRoute(Number(user.id)).url, {}, {
         preserveScroll: true,
     });
 }
 
 // Delete user
-function deleteUser(user) {
+function deleteUser(user: User): void {
     if (confirm(`Are you sure you want to delete "${user.name}"? This action cannot be undone.`)) {
-        router.delete(destroy(user.id).url, {
+        router.delete(destroy(Number(user.id)).url, {
             preserveScroll: true,
         });
     }
 }
 
 // Utility functions
-function getStatusBadgeClasses(status) {
+function getStatusBadgeClasses(status: string): string {
     switch (status) {
         case 'active': 
             return 'bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-300';
@@ -167,9 +191,41 @@ function getStatusBadgeClasses(status) {
     }
 }
 
-function formatDate(dateString) {
+function formatDate(dateString: string | null | undefined): string {
     if (!dateString) return 'Never';
     return new Date(dateString).toLocaleDateString();
+}
+
+function getStatusLabel(status?: string): string {
+    if (!status) return '';
+    return status.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+}
+
+function handleInviteRoleToggle(roleName: string, checked: boolean): void {
+    if (checked) {
+        if (!inviteForm.roles.includes(roleName)) inviteForm.roles.push(roleName);
+    } else {
+        const idx = inviteForm.roles.indexOf(roleName);
+        if (idx > -1) inviteForm.roles.splice(idx, 1);
+    }
+}
+
+function handleCreateRoleToggle(roleName: string, checked: boolean): void {
+    if (checked) {
+        if (!createForm.roles.includes(roleName)) createForm.roles.push(roleName);
+    } else {
+        const idx = createForm.roles.indexOf(roleName);
+        if (idx > -1) createForm.roles.splice(idx, 1);
+    }
+}
+
+function handleEditRoleToggle(roleName: string, checked: boolean): void {
+    if (checked) {
+        if (!editForm.roles.includes(roleName)) editForm.roles.push(roleName);
+    } else {
+        const idx = editForm.roles.indexOf(roleName);
+        if (idx > -1) editForm.roles.splice(idx, 1);
+    }
 }
 
 // Computed
@@ -182,7 +238,9 @@ const filteredStatusOptions = computed(() => [
 
 const filteredRoleOptions = computed(() => [
     { value: 'all', label: 'All Roles' },
-    ...props.roles.map(role => ({ value: role.name, label: role.name }))
+    ...(Array.isArray(props.roles)
+        ? props.roles.map((role) => ({ value: role.name, label: role.name }))
+        : [])
 ]);
 </script>
 
@@ -211,7 +269,7 @@ const filteredRoleOptions = computed(() => [
                             <Label>Role</Label>
                             <Select 
                                 :model-value="searchForm.role" 
-                                @update:model-value="(value) => { searchForm.role = value; performSearch(); }"
+                                @update:model-value="(value) => { searchForm.role = String(value ?? 'all'); performSearch(); }"
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="All Roles" />
@@ -231,7 +289,7 @@ const filteredRoleOptions = computed(() => [
                             <Label>Status</Label>
                             <Select 
                                 :model-value="searchForm.status" 
-                                @update:model-value="(value) => { searchForm.status = value; performSearch(); }"
+                                @update:model-value="(value) => { searchForm.status = String(value ?? 'all'); performSearch(); }"
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="All Statuses" />
@@ -302,14 +360,7 @@ const filteredRoleOptions = computed(() => [
                                         <Checkbox
                                             :id="`invite-role-${role.id}`"
                                             :checked="inviteForm.roles.includes(role.name)"
-                                            @update:checked="(checked) => {
-                                                if (checked) {
-                                                    inviteForm.roles.push(role.name);
-                                                } else {
-                                                    const index = inviteForm.roles.indexOf(role.name);
-                                                    if (index > -1) inviteForm.roles.splice(index, 1);
-                                                }
-                                            }"
+                                            @update:checked="handleInviteRoleToggle(role.name, $event)"
                                         />
                                         <Label :for="`invite-role-${role.id}`">{{ role.name }}</Label>
                                     </div>
@@ -373,14 +424,7 @@ const filteredRoleOptions = computed(() => [
                                         <Checkbox
                                             :id="`create-role-${role.id}`"
                                             :checked="createForm.roles.includes(role.name)"
-                                            @update:checked="(checked) => {
-                                                if (checked) {
-                                                    createForm.roles.push(role.name);
-                                                } else {
-                                                    const index = createForm.roles.indexOf(role.name);
-                                                    if (index > -1) createForm.roles.splice(index, 1);
-                                                }
-                                            }"
+                                            @update:checked="handleCreateRoleToggle(role.name, $event)"
                                         />
                                         <Label :for="`create-role-${role.id}`">{{ role.name }}</Label>
                                     </div>
@@ -459,8 +503,8 @@ const filteredRoleOptions = computed(() => [
                                         </div>
                                     </td>
                                     <td class="py-3 px-4">
-                                        <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', getStatusBadgeClasses(user.status)]">
-                                            {{ user?.status?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}
+                                        <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', getStatusBadgeClasses(user.status ?? '')]">
+                                            {{ getStatusLabel(user.status) }}
                                         </span>
                                     </td>
                                     <td class="py-3 px-4">{{ formatDate(user.last_login_at) }}</td>
@@ -581,14 +625,7 @@ const filteredRoleOptions = computed(() => [
                                     <Checkbox
                                         :id="`edit-role-${role.id}`"
                                         :checked="editForm.roles.includes(role.name)"
-                                        @update:checked="(checked) => {
-                                            if (checked) {
-                                                editForm.roles.push(role.name);
-                                            } else {
-                                                const index = editForm.roles.indexOf(role.name);
-                                                if (index > -1) editForm.roles.splice(index, 1);
-                                            }
-                                        }"
+                                        @update:checked="handleEditRoleToggle(role.name, $event)"
                                     />
                                     <Label :for="`edit-role-${role.id}`">{{ role.name }}</Label>
                                 </div>
