@@ -28,7 +28,7 @@ class StoreContactRequest extends FormRequest
             'first_name' => 'nullable|string|max:255',
             'last_name' => 'nullable|string|max:255',
             'name' => 'nullable|string|max:255',
-            'email' => 'nullable|email|unique:contacts,email,NULL,id,deleted_at,NULL',
+            'email' => 'nullable|email',
             'phone' => 'nullable|string|max:255',
             'company' => 'nullable|string|max:255',
             'job_title' => 'nullable|string|max:255',

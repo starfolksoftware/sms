@@ -30,13 +30,7 @@ class UpdateContactRequest extends FormRequest
             'first_name' => 'nullable|string|max:255',
             'last_name' => 'nullable|string|max:255',
             'name' => 'nullable|string|max:255',
-            'email' => [
-                'nullable',
-                'email',
-                Rule::unique('contacts', 'email')
-                    ->ignore($contactId)
-                    ->whereNull('deleted_at'),
-            ],
+            'email' => 'nullable|email',
             'phone' => 'nullable|string|max:255',
             'company' => 'nullable|string|max:255',
             'job_title' => 'nullable|string|max:255',
