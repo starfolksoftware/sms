@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DealController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\TaskController;
@@ -53,9 +52,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/users/invite', [App\Http\Controllers\UserController::class, 'invite'])->name('admin.users.invite');
         Route::post('/users/{user}/resend-invite', [App\Http\Controllers\UserController::class, 'resendInvite'])->name('admin.users.resend-invite');
     });
-
-    // Contact routes
-    Route::resource('contacts', ContactController::class)->except(['create', 'edit']);
 
     // Deal routes
     Route::resource('deals', DealController::class)->except(['create', 'edit']);

@@ -12,10 +12,10 @@ test('authenticated sales user can list contacts', function () {
     $salesUser = User::factory()->create();
     $salesUser->assignRole('sales');
 
-    $response = $this->actingAs($salesUser)->get('/contacts');
+    $response = $this->actingAs($salesUser)->get('/api/contacts');
 
     $response->assertOk();
-    $response->assertJsonStructure(['contacts', 'message']);
+    $response->assertJsonStructure(['contacts', 'meta', 'links', 'message']);
 });
 
 test('authenticated sales user can create contact', function () {
@@ -32,10 +32,10 @@ test('authenticated sales user can create contact', function () {
         'notes' => 'Test notes',
     ];
 
-    $response = $this->actingAs($salesUser)->post('/contacts', $contactData);
+    $response = $this->actingAs($salesUser)->post('/api/contacts', $contactData);
 
     $response->assertCreated();
-    $response->assertJsonStructure(['contact', 'message']);
+    $response->assertJsonStructure(['contact', 'warnings', 'message']);
 
     $this->assertDatabaseHas('contacts', [
         'email' => 'test@example.com',
@@ -59,7 +59,7 @@ test('sales user can update their own contact', function () {
         'notes' => $contact->notes,
     ];
 
-    $response = $this->actingAs($salesUser)->put("/contacts/{$contact->id}", $updateData);
+    $response = $this->actingAs($salesUser)->put("/api/contacts/{$contact->id}", $updateData);
 
     $response->assertOk();
     $this->assertDatabaseHas('contacts', [
@@ -85,7 +85,7 @@ test('sales user cannot update contact created by another user', function () {
         'notes' => $contact->notes,
     ];
 
-    $response = $this->actingAs($salesUser)->put("/contacts/{$contact->id}", $updateData);
+    $response = $this->actingAs($salesUser)->put("/api/contacts/{$contact->id}", $updateData);
 
     $response->assertForbidden();
 });
@@ -98,7 +98,7 @@ test('sales user can delete their own contact', function () {
 
     $contact = Contact::factory()->create(['created_by' => $salesUser->id]);
 
-    $response = $this->actingAs($salesUser)->delete("/contacts/{$contact->id}");
+    $response = $this->actingAs($salesUser)->delete("/api/contacts/{$contact->id}");
 
     $response->assertOk();
     $this->assertSoftDeleted('contacts', ['id' => $contact->id]);
@@ -113,7 +113,7 @@ test('sales user cannot delete contact created by another user', function () {
     $otherUser = User::factory()->create();
     $contact = Contact::factory()->create(['created_by' => $otherUser->id]);
 
-    $response = $this->actingAs($salesUser)->delete("/contacts/{$contact->id}");
+    $response = $this->actingAs($salesUser)->delete("/api/contacts/{$contact->id}");
 
     $response->assertForbidden();
     $this->assertDatabaseHas('contacts', ['id' => $contact->id]);
@@ -125,10 +125,10 @@ test('marketing user cannot access contacts', function () {
     $marketingUser = User::factory()->create();
     $marketingUser->assignRole('marketing');
 
-    $response = $this->actingAs($marketingUser)->get('/contacts');
+    $response = $this->actingAs($marketingUser)->get('/api/contacts');
     $response->assertForbidden();
 
-    $response = $this->actingAs($marketingUser)->post('/contacts', [
+    $response = $this->actingAs($marketingUser)->post('/api/contacts', [
         'name' => 'Test Contact',
         'email' => 'test@example.com',
     ]);
@@ -145,7 +145,7 @@ test('admin can access and modify any contact', function () {
     $contact = Contact::factory()->create(['created_by' => $otherUser->id]);
 
     // Admin can view contacts
-    $response = $this->actingAs($admin)->get('/contacts');
+    $response = $this->actingAs($admin)->get('/api/contacts');
     $response->assertOk();
 
     // Admin can update any contact
@@ -157,19 +157,19 @@ test('admin can access and modify any contact', function () {
         'notes' => $contact->notes,
     ];
 
-    $response = $this->actingAs($admin)->put("/contacts/{$contact->id}", $updateData);
+    $response = $this->actingAs($admin)->put("/api/contacts/{$contact->id}", $updateData);
     $response->assertOk();
 
     // Admin can delete any contact
-    $response = $this->actingAs($admin)->delete("/contacts/{$contact->id}");
+    $response = $this->actingAs($admin)->delete("/api/contacts/{$contact->id}");
     $response->assertOk();
 });
 
 test('unauthenticated user cannot access contacts', function () {
-    $response = $this->get('/contacts');
+    $response = $this->get('/api/contacts');
     $response->assertRedirect(); // Should redirect to login
 
-    $response = $this->post('/contacts', [
+    $response = $this->post('/api/contacts', [
         'name' => 'Test Contact',
         'email' => 'test@example.com',
     ]);

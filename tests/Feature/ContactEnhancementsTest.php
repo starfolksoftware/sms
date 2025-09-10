@@ -34,10 +34,10 @@ test('contact can be created with status and source', function () {
         'owner_id' => $owner->id,
     ];
 
-    $response = $this->actingAs($salesUser)->post('/contacts', $contactData);
+    $response = $this->actingAs($salesUser)->post('/api/contacts', $contactData);
 
     $response->assertCreated();
-    $response->assertJsonStructure(['contact', 'message']);
+    $response->assertJsonStructure(['contact', 'warnings', 'message']);
 
     $this->assertDatabaseHas('contacts', [
         'first_name' => 'John',
@@ -62,7 +62,7 @@ test('contact status defaults to lead when not specified', function () {
         'email' => 'jane@example.com',
     ];
 
-    $response = $this->actingAs($salesUser)->post('/contacts', $contactData);
+    $response = $this->actingAs($salesUser)->post('/api/contacts', $contactData);
 
     $response->assertCreated();
 
@@ -91,7 +91,7 @@ test('contact status can be updated', function () {
         'status' => ContactStatus::Customer->value,
     ];
 
-    $response = $this->actingAs($salesUser)->put("/contacts/{$contact->id}", $updateData);
+    $response = $this->actingAs($salesUser)->put("/api/contacts/{$contact->id}", $updateData);
 
     $response->assertOk();
 
@@ -121,7 +121,7 @@ test('contact email must be unique ignoring soft deleted contacts', function () 
         'email' => 'test@example.com',
     ];
 
-    $response = $this->actingAs($salesUser)->post('/contacts', $contactData);
+    $response = $this->actingAs($salesUser)->post('/api/contacts', $contactData);
 
     $response->assertCreated();
 
@@ -152,7 +152,7 @@ test('contact can be assigned to an owner', function () {
         'owner_id' => $owner->id,
     ];
 
-    $response = $this->actingAs($salesUser)->put("/contacts/{$contact->id}", $updateData);
+    $response = $this->actingAs($salesUser)->put("/api/contacts/{$contact->id}", $updateData);
 
     $response->assertOk();
 
