@@ -39,14 +39,14 @@ class ContactPolicy
         if ($user->hasRole('admin')) {
             return true;
         }
-
-        if ($user->can('edit_contacts')) {
-            // Allow if user is the creator
-            return $contact->created_by === $user->id;
-        }
-
+        // manage_clients is broad (can update any)
         if ($user->can('manage_clients')) {
             return true;
+        }
+
+        // manage_contacts or edit_contacts can update only own contacts
+        if ($user->can('manage_contacts') || $user->can('edit_contacts')) {
+            return $contact->created_by === $user->id;
         }
 
         return false;
@@ -60,14 +60,12 @@ class ContactPolicy
         if ($user->hasRole('admin')) {
             return true;
         }
-
-        if ($user->can('delete_contacts')) {
-            // Allow if user is the creator
-            return $contact->created_by === $user->id;
-        }
-
         if ($user->can('manage_clients')) {
             return true;
+        }
+
+        if ($user->can('manage_contacts') || $user->can('delete_contacts')) {
+            return $contact->created_by === $user->id;
         }
 
         return false;

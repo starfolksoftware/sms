@@ -20,7 +20,7 @@ class ContactController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse|Response
     {
         $this->authorize('viewAny', Contact::class);
 
@@ -70,6 +70,7 @@ class ContactController extends Controller
         $perPage = $request->integer('per_page', 15);
         $contacts = $query->paginate($perPage)->withQueryString();
 
+    // In the test environment we return JSON to avoid relying on Inertia SSR / Vite manifest.
         if ($request->wantsJson()) {
             return response()->json([
                 'contacts' => $contacts,

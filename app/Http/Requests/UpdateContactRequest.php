@@ -38,8 +38,9 @@ class UpdateContactRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:32'],
             'company' => ['nullable', 'string', 'max:180'],
             'job_title' => ['nullable', 'string', 'max:180'],
-            'status' => ['required', Rule::in(['lead', 'qualified', 'customer', 'archived'])],
-            'source' => ['required', Rule::in(['website_form', 'meta_ads', 'x', 'instagram', 'referral', 'manual', 'other'])],
+            // For updates allow partial payloads; status & source may be omitted.
+            'status' => ['sometimes', Rule::in(['lead', 'qualified', 'customer', 'archived'])],
+            'source' => ['sometimes', Rule::in(['website_form', 'meta_ads', 'x', 'instagram', 'referral', 'manual', 'other'])],
             'source_meta' => ['nullable', 'array'],
             'owner_id' => ['nullable', 'exists:users,id'],
             'notes' => ['nullable', 'string'],

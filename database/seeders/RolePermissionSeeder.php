@@ -62,9 +62,8 @@ class RolePermissionSeeder extends Seeder
         // Admin gets all permissions
         $adminRole->givePermissionTo(Permission::all());
 
-        // Sales role permissions
+        // Sales role permissions (no broad manage_clients so ownership rules apply)
         $salesRole->givePermissionTo([
-            'manage_clients',
             'manage_contacts',
             'view_contacts',
             'create_contacts',

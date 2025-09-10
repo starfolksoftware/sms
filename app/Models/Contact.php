@@ -47,6 +47,7 @@ class Contact extends Model
             if ($contact->isDirty(['first_name', 'last_name']) || empty($contact->name)) {
                 $contact->name = trim(collect([$contact->first_name, $contact->last_name])->filter()->implode(' ')) ?: null;
             }
+
         });
     }
 

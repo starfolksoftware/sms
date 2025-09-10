@@ -73,7 +73,7 @@ test('complete authorization system enforces permissions correctly', function ()
         'phone' => $contact->phone,
         'company' => $contact->company,
         'notes' => $contact->notes,
-    ])->assertOk();
+    ], ['Accept' => 'application/json'])->assertOk();
 
     $this->actingAs($salesUser)->put("/contacts/{$otherContact->id}", [
         'name' => 'Updated Name',
@@ -81,7 +81,7 @@ test('complete authorization system enforces permissions correctly', function ()
         'phone' => $otherContact->phone,
         'company' => $otherContact->company,
         'notes' => $otherContact->notes,
-    ])->assertForbidden();
+    ], ['Accept' => 'application/json'])->assertForbidden();
 
     // Test 6: Admin can modify any resource regardless of ownership
     $this->actingAs($admin)->put("/contacts/{$contact->id}", [
@@ -90,7 +90,7 @@ test('complete authorization system enforces permissions correctly', function ()
         'phone' => $contact->phone,
         'company' => $contact->company,
         'notes' => $contact->notes,
-    ])->assertOk();
+    ], ['Accept' => 'application/json'])->assertOk();
 
     // Test 7: Resource creation requires proper permissions
     $this->actingAs($salesUser)->post('/contacts', [
@@ -98,12 +98,12 @@ test('complete authorization system enforces permissions correctly', function ()
         'email' => 'new@example.com',
         'phone' => '1234567890',
         'company' => 'Test Company',
-    ])->assertCreated();
+    ], ['Accept' => 'application/json'])->assertCreated();
 
     $this->actingAs($marketingUser)->post('/contacts', [
         'name' => 'Marketing Contact',
         'email' => 'marketing@example.com',
-    ])->assertForbidden();
+    ], ['Accept' => 'application/json'])->assertForbidden();
 
     // Test 8: Unauthenticated access is properly blocked
     auth()->logout(); // Clear authentication
