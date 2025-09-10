@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import SelectField from '@/components/form/SelectField.vue'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 
@@ -417,26 +417,12 @@ function performDelete() {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <Label>Status</Label>
-            <Select :model-value="editForm.status" @update:model-value="val => editForm.status = String(val ?? 'lead')">
-              <SelectTrigger class="mt-1">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem v-for="o in statusOptions" :key="o.value" :value="o.value">{{ o.label }}</SelectItem>
-              </SelectContent>
-            </Select>
+            <SelectField class="mt-1" :model-value="editForm.status" @update:modelValue="v => editForm.status = v || 'lead'" :options="statusOptions" placeholder="Select status" />
             <div v-if="editForm.errors.status" class="text-sm text-red-600 mt-1">{{ editForm.errors.status }}</div>
           </div>
           <div>
             <Label>Source</Label>
-            <Select :model-value="editForm.source" @update:model-value="val => editForm.source = String(val ?? 'manual')">
-              <SelectTrigger class="mt-1">
-                <SelectValue placeholder="Select source" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem v-for="o in sourceOptions" :key="o.value" :value="o.value">{{ o.label }}</SelectItem>
-              </SelectContent>
-            </Select>
+            <SelectField class="mt-1" :model-value="editForm.source" @update:modelValue="v => editForm.source = v || 'manual'" :options="sourceOptions" placeholder="Select source" />
             <div v-if="editForm.errors.source" class="text-sm text-red-600 mt-1">{{ editForm.errors.source }}</div>
           </div>
         </div>

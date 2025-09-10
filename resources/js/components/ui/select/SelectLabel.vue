@@ -1,25 +1,16 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { SelectLabel, type SelectLabelProps, useForwardProps } from 'reka-ui'
-import { cn } from '@/lib/utils'
+import type { SelectLabelProps } from "reka-ui"
+import type { HTMLAttributes } from "vue"
+import { SelectLabel } from "reka-ui"
+import { cn } from "@/lib/utils"
 
-const props = defineProps<SelectLabelProps & {
-  class?: string
-}>()
-
-const delegatedProps = computed(() => {
-  const { class: _, ...delegated } = props
-
-  return delegated
-})
-
-const forwardedProps = useForwardProps(delegatedProps)
+const props = defineProps<SelectLabelProps & { class?: HTMLAttributes["class"] }>()
 </script>
 
 <template>
   <SelectLabel
-    :class="cn('px-2 py-1.5 text-sm font-semibold', props.class)"
-    v-bind="forwardedProps"
+    data-slot="select-label"
+    :class="cn('px-2 py-1.5 text-sm font-medium', props.class)"
   >
     <slot />
   </SelectLabel>

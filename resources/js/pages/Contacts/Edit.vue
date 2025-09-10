@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import SelectField from '@/components/form/SelectField.vue'
 
 interface User {
   id: number
@@ -171,23 +172,7 @@ const sourceOptions = [
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label>Status</Label>
-                  <Select
-                    :model-value="form.status"
-                    @update:model-value="(value) => form.status = String(value ?? 'lead')"
-                  >
-                    <SelectTrigger class="mt-1">
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem
-                        v-for="option in statusOptions"
-                        :key="option.value"
-                        :value="option.value"
-                      >
-                        {{ option.label }}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <SelectField class="mt-1" :model-value="form.status" @update:modelValue="v => form.status = v || 'lead'" :options="statusOptions" placeholder="Select status" />
                   <div v-if="form.errors.status" class="text-sm text-red-600 mt-1">
                     {{ form.errors.status }}
                   </div>
@@ -195,23 +180,7 @@ const sourceOptions = [
 
                 <div>
                   <Label>Source</Label>
-                  <Select
-                    :model-value="form.source"
-                    @update:model-value="(value) => form.source = String(value ?? 'manual')"
-                  >
-                    <SelectTrigger class="mt-1">
-                      <SelectValue placeholder="Select source" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem
-                        v-for="option in sourceOptions"
-                        :key="option.value"
-                        :value="option.value"
-                      >
-                        {{ option.label }}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <SelectField class="mt-1" :model-value="form.source" @update:modelValue="v => form.source = v || 'manual'" :options="sourceOptions" placeholder="Select source" />
                   <div v-if="form.errors.source" class="text-sm text-red-600 mt-1">
                     {{ form.errors.source }}
                   </div>
