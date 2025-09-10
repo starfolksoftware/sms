@@ -244,7 +244,7 @@ const columns = buildContactColumns()
         <div class="flex gap-4">
           <Button
             v-if="canCreateContacts"
-            @click="router.visit(route('contacts.create'))"
+            @click="router.visit('/contacts/create')"
           >
             Create Contact
           </Button>
