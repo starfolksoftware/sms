@@ -26,7 +26,7 @@ beforeEach(function () {
 it('can list deals with filters and search', function () {
     $contact = Contact::factory()->create(['name' => 'John Doe']);
     $product = Product::factory()->create();
-    
+
     Deal::factory(3)->create([
         'contact_id' => $contact->id,
         'product_id' => $product->id,
@@ -41,7 +41,7 @@ it('can list deals with filters and search', function () {
     ]);
 
     $response = $this->getJson('/api/deals');
-    
+
     $response->assertStatus(200)
         ->assertJsonStructure([
             'data',
@@ -52,7 +52,7 @@ it('can list deals with filters and search', function () {
     // Test filtering by stage
     $response = $this->getJson('/api/deals?stage=qualified');
     $response->assertStatus(200);
-    
+
     // Test search
     $response = $this->getJson('/api/deals?q=John');
     $response->assertStatus(200);
@@ -60,7 +60,7 @@ it('can list deals with filters and search', function () {
 
 it('can create a new deal', function () {
     Event::fake();
-    
+
     $contact = Contact::factory()->create();
     $product = Product::factory()->create();
 
@@ -116,15 +116,17 @@ it('can show a specific deal', function () {
 
 it('can update a deal', function () {
     Event::fake();
-    
+
     $contact = Contact::factory()->create();
     $deal = Deal::factory()->create([
         'contact_id' => $contact->id,
         'created_by' => $this->user->id,
+        'status' => 'open', // Ensure it's open
     ]);
 
     $updateData = [
         'title' => 'Updated Deal',
+        'value' => 2000.00,
         'amount' => 2000.00,
         'currency' => 'EUR',
         'contact_id' => $contact->id,
@@ -163,7 +165,7 @@ it('cannot update a closed deal', function () {
 
 it('can change deal stage', function () {
     Event::fake();
-    
+
     $deal = Deal::factory()->create([
         'stage' => 'qualified',
         'created_by' => $this->user->id,
@@ -188,7 +190,7 @@ it('can change deal stage', function () {
 
 it('can mark deal as won', function () {
     Event::fake();
-    
+
     $deal = Deal::factory()->create([
         'amount' => 1000.00,
         'status' => 'open',
@@ -214,7 +216,7 @@ it('can mark deal as won', function () {
 
 it('can mark deal as lost', function () {
     Event::fake();
-    
+
     $deal = Deal::factory()->create([
         'status' => 'open',
         'created_by' => $this->user->id,
@@ -251,7 +253,7 @@ it('requires lost_reason when marking deal as lost', function () {
 
 it('can delete a deal', function () {
     Event::fake();
-    
+
     $deal = Deal::factory()->create(['created_by' => $this->user->id]);
 
     $response = $this->deleteJson("/api/deals/{$deal->id}");
@@ -265,7 +267,7 @@ it('can delete a deal', function () {
 
 it('can restore a deleted deal', function () {
     Event::fake();
-    
+
     $deal = Deal::factory()->create(['created_by' => $this->user->id]);
     $deal->delete();
 
@@ -295,6 +297,7 @@ it('enforces authorization on deal operations', function () {
     // Should not be able to update other user's deal
     $response = $this->putJson("/api/deals/{$otherUsersDeal->id}", [
         'title' => 'Updated Deal',
+        'value' => 2000.00,
         'amount' => 2000.00,
         'currency' => 'USD',
         'contact_id' => Contact::factory()->create()->id,

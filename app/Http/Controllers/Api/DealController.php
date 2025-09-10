@@ -17,10 +17,6 @@ use Illuminate\Http\Request;
 
 class DealController extends Controller
 {
-    public function __construct(
-        private DealService $dealService
-    ) {}
-
     /**
      * Display a listing of the resource.
      */
@@ -41,7 +37,8 @@ class DealController extends Controller
             'include_counts' => $request->boolean('include_counts'),
         ];
 
-        $deals = $this->dealService->getList($filters, $options);
+        $dealService = app(DealService::class);
+        $deals = $dealService->getList($filters, $options);
 
         return new DealCollection($deals);
     }
@@ -51,7 +48,12 @@ class DealController extends Controller
      */
     public function store(StoreDealRequest $request): JsonResponse
     {
-        $deal = $this->dealService->create($request->validated());
+        $dealService = app(DealService::class);
+
+        $data = $request->validated();
+        $data['created_by'] = auth()->id();
+
+        $deal = $dealService->create($data);
 
         return response()->json([
             'message' => 'Deal created successfully.',
@@ -80,7 +82,7 @@ class DealController extends Controller
     {
         $this->authorize('update', $deal);
 
-        $updatedDeal = $this->dealService->update($deal, $request->validated());
+        $updatedDeal = app(DealService::class)->update($deal, $request->validated());
 
         return response()->json([
             'message' => 'Deal updated successfully.',
@@ -95,7 +97,7 @@ class DealController extends Controller
     {
         $this->authorize('delete', $deal);
 
-        $this->dealService->delete($deal);
+        app(DealService::class)->delete($deal);
 
         return response()->json(null, 204);
     }
@@ -107,7 +109,7 @@ class DealController extends Controller
     {
         $this->authorize('restore', $deal);
 
-        $restoredDeal = $this->dealService->restore($deal);
+        $restoredDeal = app(DealService::class)->restore($deal);
 
         return response()->json([
             'message' => 'Deal restored successfully.',
@@ -122,7 +124,7 @@ class DealController extends Controller
     {
         $this->authorize('changeStage', $deal);
 
-        $updatedDeal = $this->dealService->changeStage(
+        $updatedDeal = app(DealService::class)->changeStage(
             $deal,
             $request->validated('stage'),
             $request->validated('probability')
@@ -141,7 +143,7 @@ class DealController extends Controller
     {
         $this->authorize('win', $deal);
 
-        $wonDeal = $this->dealService->win($deal, $request->validated('won_amount'));
+        $wonDeal = app(DealService::class)->win($deal, $request->validated('won_amount'));
 
         return response()->json([
             'message' => 'Deal marked as won.',
@@ -156,7 +158,7 @@ class DealController extends Controller
     {
         $this->authorize('lose', $deal);
 
-        $lostDeal = $this->dealService->lose($deal, $request->validated('lost_reason'));
+        $lostDeal = app(DealService::class)->lose($deal, $request->validated('lost_reason'));
 
         return response()->json([
             'message' => 'Deal marked as lost.',

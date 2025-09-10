@@ -76,7 +76,6 @@ class StoreDealRequest extends FormRequest
             'source' => trim($this->source ?? ''),
             'currency' => strtoupper(trim($this->currency ?? '')),
             'stage' => trim($this->stage ?? '') ?: 'new',
-            'created_by' => $this->user()->id,
         ]);
     }
 }
