@@ -29,7 +29,7 @@ class DealPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_deals');
+        return $user->can('manage_deals');
     }
 
     /**
@@ -37,7 +37,7 @@ class DealPolicy
      */
     public function update(User $user, Deal $deal): bool
     {
-        if (! $user->can('edit_deals')) {
+        if (! $user->can('manage_deals')) {
             return false;
         }
 
@@ -50,7 +50,7 @@ class DealPolicy
      */
     public function delete(User $user, Deal $deal): bool
     {
-        if (! $user->can('delete_deals')) {
+        if (! $user->can('manage_deals')) {
             return false;
         }
 
@@ -71,6 +71,30 @@ class DealPolicy
      */
     public function forceDelete(User $user, Deal $deal): bool
     {
-        return $user->hasRole('admin');
+        return false; // Force delete not allowed
+    }
+
+    /**
+     * Determine whether the user can change the stage of the model.
+     */
+    public function changeStage(User $user, Deal $deal): bool
+    {
+        return $user->can('manage_deals');
+    }
+
+    /**
+     * Determine whether the user can mark the deal as won.
+     */
+    public function win(User $user, Deal $deal): bool
+    {
+        return $user->can('manage_deals');
+    }
+
+    /**
+     * Determine whether the user can mark the deal as lost.
+     */
+    public function lose(User $user, Deal $deal): bool
+    {
+        return $user->can('manage_deals');
     }
 }

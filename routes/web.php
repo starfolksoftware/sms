@@ -73,7 +73,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/contacts/check-duplicate', [ContactController::class, 'checkDuplicate'])->name('contacts.check-duplicate');
 
     // Deal routes
-    Route::resource('deals', DealController::class)->except(['create', 'edit']);
+    Route::get('/crm/deals', [DealController::class, 'index'])->name('deals.index');
+    Route::get('/crm/deals/new', [DealController::class, 'create'])->name('deals.create');
+    Route::post('/crm/deals', [DealController::class, 'store'])->name('deals.store');
+    Route::get('/crm/deals/{deal}', [DealController::class, 'show'])->name('deals.show');
+    Route::get('/crm/deals/{deal}/edit', [DealController::class, 'edit'])->name('deals.edit');
+    Route::put('/crm/deals/{deal}', [DealController::class, 'update'])->name('deals.update');
+    Route::delete('/crm/deals/{deal}', [DealController::class, 'destroy'])->name('deals.destroy');
+    Route::post('/crm/deals/{id}/restore', [DealController::class, 'restore'])->name('deals.restore');
+
+    // Deal transitions
+    Route::post('/crm/deals/{deal}/stage', [DealController::class, 'changeStage'])->name('deals.stage');
+    Route::post('/crm/deals/{deal}/win', [DealController::class, 'win'])->name('deals.win');
+    Route::post('/crm/deals/{deal}/lose', [DealController::class, 'lose'])->name('deals.lose');
 
     // Task routes
     Route::resource('tasks', TaskController::class)->except(['create', 'edit']);
