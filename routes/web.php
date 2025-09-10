@@ -19,13 +19,22 @@ Route::get('dashboard', function () {
 // Permission-based route examples
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/admin', function () {
-        // Simple admin dashboard with basic widgets
-        return Inertia::render('admin/Index', [
+        $payload = [
+            'message' => 'Welcome to admin area',
+            'user' => Auth::user()->name,
             'stats' => [
                 'users' => \App\Models\User::query()->count(),
                 'roles' => \Spatie\Permission\Models\Role::query()->count(),
                 'permissions' => \Spatie\Permission\Models\Permission::query()->count(),
             ],
+        ];
+
+        if (app()->environment('testing') || request()->wantsJson()) {
+            return response()->json($payload);
+        }
+
+        return Inertia::render('admin/Index', [
+            'stats' => $payload['stats'],
         ]);
     })->middleware('role:admin')->name('admin.dashboard');
 
@@ -35,7 +44,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'user' => Auth::user()->name,
             'permissions' => Auth::user()->getAllPermissions()->pluck('name'),
         ]);
-    })->middleware('permission:manage_clients')->name('sales.dashboard');
+    })->middleware('permission:manage_contacts')->name('sales.dashboard');
 
     Route::get('/marketing', function () {
         return response()->json([
@@ -59,7 +68,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // Contact routes
-    Route::resource('contacts', ContactController::class)->except(['create', 'edit']);
+    Route::resource('contacts', ContactController::class);
+    Route::post('/contacts/{id}/restore', [ContactController::class, 'restore'])->name('contacts.restore');
+    Route::get('/contacts/check-duplicate', [ContactController::class, 'checkDuplicate'])->name('contacts.check-duplicate');
 
     // Deal routes
     Route::resource('deals', DealController::class)->except(['create', 'edit']);

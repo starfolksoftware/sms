@@ -20,6 +20,7 @@ class Task extends Model
         'priority',
         'due_date',
         'assigned_to',
+        'contact_id',
         'created_by',
     ];
 
@@ -47,5 +48,10 @@ class Task extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function contact(): BelongsTo
+    {
+        return $this->belongsTo(Contact::class);
     }
 }

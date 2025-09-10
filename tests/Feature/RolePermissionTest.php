@@ -60,7 +60,7 @@ test('sales role has correct permissions', function () {
     $salesRole = Role::findByName('sales');
 
     $allowedPermissions = [
-        'manage_clients',
+        'manage_contacts',
         'manage_tasks',
         'view_dashboard',
         'view_reports',
@@ -73,6 +73,7 @@ test('sales role has correct permissions', function () {
         'manage_settings',
         'create_campaigns',
         'manage_campaigns',
+        'manage_clients', // no longer assigned to sales
     ];
 
     foreach ($allowedPermissions as $permission) {
@@ -131,7 +132,8 @@ test('user with sales role can manage clients but not users', function () {
     $user = User::factory()->create();
     $user->assignRole('sales');
 
-    expect($user->can('manage_clients'))->toBeTrue();
+    // manage_clients removed; sales relies on manage_contacts instead
+    expect($user->can('manage_contacts'))->toBeTrue();
     expect($user->can('manage_tasks'))->toBeTrue();
     expect($user->can('manage_users'))->toBeFalse();
     expect($user->can('manage_roles'))->toBeFalse();

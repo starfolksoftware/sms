@@ -13,3 +13,14 @@ export function urlIsActive(urlToCheck: NonNullable<InertiaLinkProps['href']>, c
 export function toUrl(href: NonNullable<InertiaLinkProps['href']>) {
     return typeof href === 'string' ? href : href?.url;
 }
+
+export function debounce<T extends (...args: any[]) => any>(
+    func: T,
+    wait: number
+): (...args: Parameters<T>) => void {
+    let timeout: NodeJS.Timeout
+    return (...args: Parameters<T>) => {
+        clearTimeout(timeout)
+        timeout = setTimeout(() => func(...args), wait)
+    }
+}

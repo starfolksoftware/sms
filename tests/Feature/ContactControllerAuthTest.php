@@ -12,7 +12,9 @@ test('authenticated sales user can list contacts', function () {
     $salesUser = User::factory()->create();
     $salesUser->assignRole('sales');
     
-    $response = $this->actingAs($salesUser)->get('/contacts');
+    $response = $this->actingAs($salesUser)
+        ->withHeaders(['Accept' => 'application/json'])
+        ->get('/contacts');
     
     $response->assertOk();
     $response->assertJsonStructure(['contacts', 'message']);
@@ -30,9 +32,13 @@ test('authenticated sales user can create contact', function () {
         'phone' => '1234567890',
         'company' => 'Test Company',
         'notes' => 'Test notes',
+        'status' => 'lead',
+        'source' => 'manual',
     ];
     
-    $response = $this->actingAs($salesUser)->post('/contacts', $contactData);
+    $response = $this->actingAs($salesUser)
+        ->withHeaders(['Accept' => 'application/json'])
+        ->post('/contacts', $contactData);
     
     $response->assertCreated();
     $response->assertJsonStructure(['contact', 'message']);
@@ -57,9 +63,13 @@ test('sales user can update their own contact', function () {
         'phone' => $contact->phone,
         'company' => $contact->company,
         'notes' => $contact->notes,
+        'status' => $contact->status->value,
+        'source' => $contact->source,
     ];
     
-    $response = $this->actingAs($salesUser)->put("/contacts/{$contact->id}", $updateData);
+    $response = $this->actingAs($salesUser)
+        ->withHeaders(['Accept' => 'application/json'])
+        ->put("/contacts/{$contact->id}", $updateData);
     
     $response->assertOk();
     $this->assertDatabaseHas('contacts', [
@@ -83,9 +93,13 @@ test('sales user cannot update contact created by another user', function () {
         'phone' => $contact->phone,
         'company' => $contact->company,
         'notes' => $contact->notes,
+        'status' => $contact->status->value,
+        'source' => $contact->source,
     ];
     
-    $response = $this->actingAs($salesUser)->put("/contacts/{$contact->id}", $updateData);
+    $response = $this->actingAs($salesUser)
+        ->withHeaders(['Accept' => 'application/json'])
+        ->put("/contacts/{$contact->id}", $updateData);
     
     $response->assertForbidden();
 });
@@ -98,10 +112,12 @@ test('sales user can delete their own contact', function () {
     
     $contact = Contact::factory()->create(['created_by' => $salesUser->id]);
     
-    $response = $this->actingAs($salesUser)->delete("/contacts/{$contact->id}");
+    $response = $this->actingAs($salesUser)
+        ->withHeaders(['Accept' => 'application/json'])
+        ->delete("/contacts/{$contact->id}");
     
     $response->assertOk();
-    $this->assertDatabaseMissing('contacts', ['id' => $contact->id]);
+    $this->assertSoftDeleted('contacts', ['id' => $contact->id]);
 });
 
 test('sales user cannot delete contact created by another user', function () {
@@ -113,7 +129,9 @@ test('sales user cannot delete contact created by another user', function () {
     $otherUser = User::factory()->create();
     $contact = Contact::factory()->create(['created_by' => $otherUser->id]);
     
-    $response = $this->actingAs($salesUser)->delete("/contacts/{$contact->id}");
+    $response = $this->actingAs($salesUser)
+        ->withHeaders(['Accept' => 'application/json'])
+        ->delete("/contacts/{$contact->id}");
     
     $response->assertForbidden();
     $this->assertDatabaseHas('contacts', ['id' => $contact->id]);
@@ -125,13 +143,19 @@ test('marketing user cannot access contacts', function () {
     $marketingUser = User::factory()->create();
     $marketingUser->assignRole('marketing');
     
-    $response = $this->actingAs($marketingUser)->get('/contacts');
+    $response = $this->actingAs($marketingUser)
+        ->withHeaders(['Accept' => 'application/json'])
+        ->get('/contacts');
     $response->assertForbidden();
     
-    $response = $this->actingAs($marketingUser)->post('/contacts', [
-        'name' => 'Test Contact',
-        'email' => 'test@example.com',
-    ]);
+    $response = $this->actingAs($marketingUser)
+        ->withHeaders(['Accept' => 'application/json'])
+        ->post('/contacts', [
+            'name' => 'Test Contact',
+            'email' => 'test@example.com',
+            'status' => 'lead',
+            'source' => 'manual',
+        ]);
     $response->assertForbidden();
 });
 
@@ -145,7 +169,9 @@ test('admin can access and modify any contact', function () {
     $contact = Contact::factory()->create(['created_by' => $otherUser->id]);
     
     // Admin can view contacts
-    $response = $this->actingAs($admin)->get('/contacts');
+    $response = $this->actingAs($admin)
+        ->withHeaders(['Accept' => 'application/json'])
+        ->get('/contacts');
     $response->assertOk();
     
     // Admin can update any contact
@@ -155,13 +181,19 @@ test('admin can access and modify any contact', function () {
         'phone' => $contact->phone,
         'company' => $contact->company,
         'notes' => $contact->notes,
+        'status' => $contact->status->value,
+        'source' => $contact->source,
     ];
     
-    $response = $this->actingAs($admin)->put("/contacts/{$contact->id}", $updateData);
+    $response = $this->actingAs($admin)
+        ->withHeaders(['Accept' => 'application/json'])
+        ->put("/contacts/{$contact->id}", $updateData);
     $response->assertOk();
     
     // Admin can delete any contact
-    $response = $this->actingAs($admin)->delete("/contacts/{$contact->id}");
+    $response = $this->actingAs($admin)
+        ->withHeaders(['Accept' => 'application/json'])
+        ->delete("/contacts/{$contact->id}");
     $response->assertOk();
 });
 

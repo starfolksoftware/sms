@@ -7,7 +7,7 @@ import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Shield } from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, Shield, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
 
@@ -26,6 +26,11 @@ const mainNavItems = computed((): NavItem[] => {
             title: 'Dashboard',
             href: dashboard(),
             icon: LayoutGrid,
+        },
+        {
+            title: 'Contacts',
+            href: '/contacts',
+            icon: Users,
         },
     ];
     

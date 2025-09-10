@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\Contact;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class ContactPolicy
 {
@@ -13,7 +12,7 @@ class ContactPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_contacts');
+        return $user->can('view_clients') || $user->can('view_contacts');
     }
 
     /**
@@ -21,7 +20,7 @@ class ContactPolicy
      */
     public function view(User $user, Contact $contact): bool
     {
-        return $user->can('view_contacts');
+        return $user->can('view_clients') || $user->can('view_contacts');
     }
 
     /**
@@ -29,7 +28,7 @@ class ContactPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_contacts');
+        return $user->can('manage_clients') || $user->can('create_contacts');
     }
 
     /**
@@ -37,12 +36,20 @@ class ContactPolicy
      */
     public function update(User $user, Contact $contact): bool
     {
-        if (! $user->can('edit_contacts')) {
-            return false;
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+        // manage_clients is broad (can update any)
+        if ($user->can('manage_clients')) {
+            return true;
         }
 
-        // Allow if user is admin or creator
-        return $user->hasRole('admin') || $contact->created_by === $user->id;
+        // manage_contacts or edit_contacts can update only own contacts
+        if ($user->can('manage_contacts') || $user->can('edit_contacts')) {
+            return $contact->created_by === $user->id;
+        }
+
+        return false;
     }
 
     /**
@@ -50,12 +57,18 @@ class ContactPolicy
      */
     public function delete(User $user, Contact $contact): bool
     {
-        if (! $user->can('delete_contacts')) {
-            return false;
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+        if ($user->can('manage_clients')) {
+            return true;
         }
 
-        // Allow if user is admin or creator
-        return $user->hasRole('admin') || $contact->created_by === $user->id;
+        if ($user->can('manage_contacts') || $user->can('delete_contacts')) {
+            return $contact->created_by === $user->id;
+        }
+
+        return false;
     }
 
     /**
@@ -63,7 +76,7 @@ class ContactPolicy
      */
     public function restore(User $user, Contact $contact): bool
     {
-        return $user->hasRole('admin');
+        return $user->can('manage_clients');
     }
 
     /**
@@ -71,6 +84,6 @@ class ContactPolicy
      */
     public function forceDelete(User $user, Contact $contact): bool
     {
-        return $user->hasRole('admin');
+        return false;
     }
 }
