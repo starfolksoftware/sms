@@ -54,9 +54,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/users/{user}/resend-invite', [App\Http\Controllers\UserController::class, 'resendInvite'])->name('admin.users.resend-invite');
     });
 
-    // Contact routes
-    Route::resource('contacts', ContactController::class)->except(['create', 'edit']);
-    Route::post('contacts/{contact}/restore', [ContactController::class, 'restore'])->name('contacts.restore');
+    // Contact API routes (JSON)
+    Route::prefix('api')->group(function () {
+        Route::resource('contacts', ContactController::class)->except(['create', 'edit']);
+        Route::post('contacts/{contact}/restore', [ContactController::class, 'restore'])->name('contacts.restore');
+    });
+
+    // Contact web routes (Inertia)
+    Route::middleware('permission:view_contacts')->prefix('crm')->group(function () {
+        Route::get('/contacts', [ContactController::class, 'webIndex'])->name('crm.contacts.index');
+        Route::get('/contacts/create', [ContactController::class, 'webCreate'])->name('crm.contacts.create')->middleware('permission:create_contacts');
+        Route::get('/contacts/{contact}', [ContactController::class, 'webShow'])->name('crm.contacts.show');
+        Route::get('/contacts/{contact}/edit', [ContactController::class, 'webEdit'])->name('crm.contacts.edit')->middleware('permission:edit_contacts');
+        Route::post('/contacts', [ContactController::class, 'webStore'])->name('crm.contacts.store')->middleware('permission:create_contacts');
+        Route::put('/contacts/{contact}', [ContactController::class, 'webUpdate'])->name('crm.contacts.update')->middleware('permission:edit_contacts');
+        Route::delete('/contacts/{contact}', [ContactController::class, 'webDestroy'])->name('crm.contacts.destroy')->middleware('permission:delete_contacts');
+        Route::post('/contacts/{contact}/restore', [ContactController::class, 'webRestore'])->name('crm.contacts.web_restore')->middleware('permission:delete_contacts');
+    });
 
     // Deal routes
     Route::resource('deals', DealController::class)->except(['create', 'edit']);

@@ -5,9 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreContactRequest;
 use App\Http\Requests\UpdateContactRequest;
 use App\Models\Contact;
+use App\Models\User;
 use App\Services\ContactService;
+use App\Enums\ContactSource;
+use App\Enums\ContactStatus;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class ContactController extends Controller
 {
@@ -159,6 +164,201 @@ class ContactController extends Controller
                 'message' => 'Cannot restore contact.',
                 'errors' => $e->errors(),
             ], 422);
+        }
+    }
+
+    // Web routes (Inertia)
+    
+    /**
+     * Display contacts list page (Inertia)
+     */
+    public function webIndex(Request $request): Response
+    {
+        $this->authorize('viewAny', Contact::class);
+
+        $filters = $request->only(['search', 'status', 'source', 'owner_id', 'created_from', 'created_to']);
+        $options = $request->only(['sort_by', 'sort_direction', 'per_page', 'page']);
+        
+        $contacts = $this->contactService->getContacts($filters, $options);
+        
+        // Get filter options
+        $owners = User::select('id', 'name')->orderBy('name')->get();
+        $statusOptions = collect(ContactStatus::cases())->map(fn($status) => [
+            'value' => $status->value,
+            'label' => $status->displayName(),
+            'badge_class' => $status->badgeClass()
+        ]);
+        $sourceOptions = collect(ContactSource::cases())->map(fn($source) => [
+            'value' => $source->value, 
+            'label' => $source->displayName(),
+            'icon_class' => $source->iconClass()
+        ]);
+
+        return Inertia::render('crm/contacts/Index', [
+            'contacts' => $contacts,
+            'filters' => $filters,
+            'owners' => $owners,
+            'statusOptions' => $statusOptions,
+            'sourceOptions' => $sourceOptions,
+        ]);
+    }
+
+    /**
+     * Show contact create form (Inertia)
+     */
+    public function webCreate(): Response
+    {
+        $this->authorize('create', Contact::class);
+
+        $owners = User::select('id', 'name')->orderBy('name')->get();
+        $statusOptions = collect(ContactStatus::cases())->map(fn($status) => [
+            'value' => $status->value,
+            'label' => $status->displayName()
+        ]);
+        $sourceOptions = collect(ContactSource::cases())->map(fn($source) => [
+            'value' => $source->value,
+            'label' => $source->displayName()
+        ]);
+
+        return Inertia::render('crm/contacts/Create', [
+            'owners' => $owners,
+            'statusOptions' => $statusOptions,
+            'sourceOptions' => $sourceOptions,
+        ]);
+    }
+
+    /**
+     * Show contact details (Inertia)
+     */
+    public function webShow(Contact $contact): Response
+    {
+        $this->authorize('view', $contact);
+
+        $contact->load(['creator', 'owner'])->loadCount(['deals', 'tasks']);
+
+        return Inertia::render('crm/contacts/Show', [
+            'contact' => $contact,
+            'can' => [
+                'update' => auth()->user()->can('update', $contact),
+                'delete' => auth()->user()->can('delete', $contact),
+                'restore' => auth()->user()->can('restore', $contact),
+            ],
+        ]);
+    }
+
+    /**
+     * Show contact edit form (Inertia)
+     */
+    public function webEdit(Contact $contact): Response
+    {
+        $this->authorize('update', $contact);
+
+        $owners = User::select('id', 'name')->orderBy('name')->get();
+        $statusOptions = collect(ContactStatus::cases())->map(fn($status) => [
+            'value' => $status->value,
+            'label' => $status->displayName()
+        ]);
+        $sourceOptions = collect(ContactSource::cases())->map(fn($source) => [
+            'value' => $source->value,
+            'label' => $source->displayName()
+        ]);
+
+        return Inertia::render('crm/contacts/Edit', [
+            'contact' => $contact,
+            'owners' => $owners,
+            'statusOptions' => $statusOptions,
+            'sourceOptions' => $sourceOptions,
+        ]);
+    }
+
+    /**
+     * Store contact via web form (Inertia)
+     */
+    public function webStore(StoreContactRequest $request)
+    {
+        $this->authorize('create', Contact::class);
+
+        $validated = $request->validated();
+        $validated['created_by'] = auth()->id();
+
+        if (! isset($validated['owner_id'])) {
+            $validated['owner_id'] = auth()->id();
+        }
+
+        try {
+            $result = $this->contactService->createContact($validated);
+
+            $message = 'Contact created successfully';
+            if (!empty($result['warnings'])) {
+                $message .= ' (with warnings)';
+            }
+
+            return redirect()->route('crm.contacts.show', $result['contact'])
+                ->with('success', $message)
+                ->with('warnings', $result['warnings']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->errors())->withInput();
+        }
+    }
+
+    /**
+     * Update contact via web form (Inertia)
+     */
+    public function webUpdate(UpdateContactRequest $request, Contact $contact)
+    {
+        $this->authorize('update', $contact);
+
+        $validated = $request->validated();
+
+        try {
+            $result = $this->contactService->updateContact($contact, $validated);
+
+            $message = 'Contact updated successfully';
+            if (!empty($result['warnings'])) {
+                $message .= ' (with warnings)';
+            }
+
+            return redirect()->route('crm.contacts.show', $result['contact'])
+                ->with('success', $message)
+                ->with('warnings', $result['warnings']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->errors())->withInput();
+        }
+    }
+
+    /**
+     * Delete contact via web (Inertia)
+     */
+    public function webDestroy(Contact $contact)
+    {
+        $this->authorize('delete', $contact);
+
+        $this->contactService->deleteContact($contact);
+
+        return redirect()->route('crm.contacts.index')
+            ->with('success', 'Contact deleted successfully');
+    }
+
+    /**
+     * Restore contact via web (Inertia)
+     */
+    public function webRestore(int $id)
+    {
+        $contact = Contact::withTrashed()->findOrFail($id);
+        $this->authorize('restore', $contact);
+
+        if (! $contact->trashed()) {
+            return redirect()->route('crm.contacts.show', $contact)
+                ->with('error', 'Contact is not deleted.');
+        }
+
+        try {
+            $restoredContact = $this->contactService->restoreContact($contact);
+
+            return redirect()->route('crm.contacts.show', $restoredContact)
+                ->with('success', 'Contact restored successfully');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->errors());
         }
     }
 }

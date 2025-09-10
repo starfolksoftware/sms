@@ -7,7 +7,7 @@ import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Shield } from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, Shield, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
 
@@ -28,6 +28,15 @@ const mainNavItems = computed((): NavItem[] => {
             icon: LayoutGrid,
         },
     ];
+    
+    // Add Contacts link if user has view_contacts permission
+    if (permissions.value.includes('view_contacts')) {
+        items.push({
+            title: 'Contacts',
+            href: '/crm/contacts',
+            icon: Users,
+        });
+    }
     
     // Add Admin link if user has any admin-related permission
     if (permissions.value.includes('manage_users') || permissions.value.includes('manage_roles') || permissions.value.includes('view_audit_logs')) {
