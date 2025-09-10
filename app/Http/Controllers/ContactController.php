@@ -37,8 +37,14 @@ class ContactController extends Controller
             $query->where('source', $source);
         }
 
-        if ($ownerId = $request->integer('owner_id')) {
-            $query->where('owner_id', $ownerId);
+        // Owner filter: UI sends owner_id=0 to represent "unassigned" (NULL in DB)
+        if ($request->has('owner_id')) {
+            $rawOwner = $request->input('owner_id');
+            if ($rawOwner === '0' || $rawOwner === 0) {
+                $query->whereNull('owner_id');
+            } elseif (($ownerId = $request->integer('owner_id')) !== 0 && $ownerId !== null) {
+                $query->where('owner_id', $ownerId);
+            }
         }
 
         if ($from = $request->date('created_from')) {
@@ -104,14 +110,15 @@ class ContactController extends Controller
     public function store(StoreContactRequest $request)
     {
         $validated = $request->validated();
-        $validated['created_by'] = auth()->id();
+    // Associate creator; use request user for stricter static analysis friendliness.
+    $validated['created_by'] = $request->user()?->id;
 
         $contact = Contact::create($validated);
         $contact->load(['creator', 'owner']);
 
         event(new ContactCreated($contact));
 
-        if ($request->wantsJson()) {
+    if ($request->wantsJson()) {
             return response()->json([
                 'contact' => $contact,
                 'message' => 'Contact created successfully',
@@ -136,7 +143,7 @@ class ContactController extends Controller
             'tasks' => fn($query) => $query->latest()->limit(5)
         ]);
 
-        if ($request->wantsJson()) {
+    if ($request->wantsJson()) {
             return response()->json([
                 'contact' => $contact,
                 'message' => 'Contact retrieved successfully',
