@@ -109,4 +109,20 @@ class User extends Authenticatable
             'email_verified_at' => now(),
         ]);
     }
+
+    /**
+     * Deals owned by this user.
+     */
+    public function ownedDeals(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\Deal::class, 'owner_id');
+    }
+
+    /**
+     * Deals created by this user.
+     */
+    public function createdDeals(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\Deal::class, 'created_by');
+    }
 }

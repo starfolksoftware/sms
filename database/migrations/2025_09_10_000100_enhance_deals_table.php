@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -48,7 +49,10 @@ return new class extends Migration
         });
         
         // Update status enum to include new values if needed
-        DB::statement("ALTER TABLE deals MODIFY COLUMN status ENUM('open', 'won', 'lost') DEFAULT 'open'");
+        // This is a safer approach than ALTER TABLE for enum changes
+        if (Schema::getConnection()->getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE deals MODIFY COLUMN status ENUM('open', 'won', 'lost') DEFAULT 'open'");
+        }
     }
 
     /**
