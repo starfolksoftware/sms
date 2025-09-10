@@ -19,5 +19,3 @@ Route::middleware(['auth', 'verified'])->prefix('deals')->group(function () {
     Route::post('/{deal}/win', [DealController::class, 'win'])->name('api.deals.win');
     Route::post('/{deal}/lose', [DealController::class, 'lose'])->name('api.deals.lose');
 });
-
-// Note: Contact routes remain in web.php to avoid route conflicts with authorization tests
