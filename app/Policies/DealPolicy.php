@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\Deal;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class DealPolicy
 {
@@ -72,5 +71,44 @@ class DealPolicy
     public function forceDelete(User $user, Deal $deal): bool
     {
         return $user->hasRole('admin');
+    }
+
+    /**
+     * Determine whether the user can change the deal stage.
+     */
+    public function changeStage(User $user, Deal $deal): bool
+    {
+        if (! $user->can('edit_deals')) {
+            return false;
+        }
+
+        // Allow if user is admin or creator
+        return $user->hasRole('admin') || $deal->created_by === $user->id;
+    }
+
+    /**
+     * Determine whether the user can mark the deal as won.
+     */
+    public function win(User $user, Deal $deal): bool
+    {
+        if (! $user->can('edit_deals')) {
+            return false;
+        }
+
+        // Allow if user is admin or creator
+        return $user->hasRole('admin') || $deal->created_by === $user->id;
+    }
+
+    /**
+     * Determine whether the user can mark the deal as lost.
+     */
+    public function lose(User $user, Deal $deal): bool
+    {
+        if (! $user->can('edit_deals')) {
+            return false;
+        }
+
+        // Allow if user is admin or creator
+        return $user->hasRole('admin') || $deal->created_by === $user->id;
     }
 }
