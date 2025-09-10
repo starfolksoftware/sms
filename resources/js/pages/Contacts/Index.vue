@@ -34,6 +34,7 @@ interface Contact {
   created_at: string
   deals_count: number
   tasks_count: number
+  notes?: string | null
 }
 
 interface Link {
@@ -168,7 +169,8 @@ function openEdit(contact: Contact) {
   createForm.status = contact.status
   createForm.source = contact.source
   createForm.owner_id = contact.owner ? String(contact.owner.id) : 'unassigned'
-  createForm.notes = '' // notes not in list payload; left blank
+  // Prefill notes if present on contact (falls back to empty string)
+  createForm.notes = (contact as any).notes || ''
   isCreateDialogOpen.value = true
 }
 
@@ -289,6 +291,7 @@ function submitEdit() {
           owner: createForm.owner_id && createForm.owner_id !== 'unassigned'
             ? { id: Number(createForm.owner_id), name: props.users.find(u => u.id === Number(createForm.owner_id))?.name || 'Owner' }
             : null,
+          notes: createForm.notes || null,
         }
       }
       toast.success('Contact updated')
