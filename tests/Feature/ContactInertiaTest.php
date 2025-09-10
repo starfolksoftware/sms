@@ -19,7 +19,7 @@ test('contact index page renders correctly', function () {
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
-        ->component('Contacts/Index')
+        ->component('contacts/Index')
         ->has('contacts.data')
         ->has('users')
         ->has('canCreateContacts')
@@ -36,7 +36,7 @@ test('contact create page renders correctly', function () {
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
-        ->component('Contacts/Create')
+        ->component('contacts/Create')
         ->has('users')
     );
 });
@@ -53,7 +53,7 @@ test('contact show page renders correctly', function () {
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
-        ->component('Contacts/Show')
+        ->component('contacts/Show')
         ->has('contact')
         ->has('canEditContact')
         ->has('canDeleteContact')
@@ -72,7 +72,7 @@ test('contact edit page renders correctly', function () {
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
-        ->component('Contacts/Edit')
+        ->component('contacts/Edit')
         ->has('contact')
         ->has('users')
     );
@@ -93,7 +93,7 @@ test('contact filtering works correctly', function () {
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
-        ->component('Contacts/Index')
+        ->component('contacts/Index')
         ->where('contacts.data', fn ($contacts) => count($contacts) === 1 && $contacts[0]['status'] === 'lead'
         )
     );
