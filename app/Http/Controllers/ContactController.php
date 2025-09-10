@@ -78,7 +78,7 @@ class ContactController extends Controller
             ]);
         }
 
-        return Inertia::render('Contacts/Index', [
+        return Inertia::render('contacts/Index', [
             'contacts' => $contacts,
             'filters' => $request->only(['status', 'source', 'owner_id', 'created_from', 'created_to', 'search', 'sort_by', 'sort_direction']),
             'users' => User::select('id', 'name')->get(),
@@ -93,7 +93,7 @@ class ContactController extends Controller
     {
         $this->authorize('create', Contact::class);
 
-        return Inertia::render('Contacts/Create', [
+        return Inertia::render('contacts/Create', [
             'users' => User::select('id', 'name')->get(),
         ]);
     }
@@ -143,7 +143,7 @@ class ContactController extends Controller
             ]);
         }
 
-        return Inertia::render('Contacts/Show', [
+        return Inertia::render('contacts/Show', [
             'contact' => $contact,
             'canEditContact' => $request->user()->can('update', $contact),
             'canDeleteContact' => $request->user()->can('delete', $contact),
@@ -157,7 +157,7 @@ class ContactController extends Controller
     {
         $this->authorize('update', $contact);
 
-        return Inertia::render('Contacts/Edit', [
+        return Inertia::render('contacts/Edit', [
             'contact' => $contact,
             'users' => User::select('id', 'name')->get(),
         ]);
