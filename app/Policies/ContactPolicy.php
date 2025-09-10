@@ -12,7 +12,7 @@ class ContactPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_clients');
+        return $user->can('view_clients') || $user->can('view_contacts');
     }
 
     /**
@@ -20,7 +20,7 @@ class ContactPolicy
      */
     public function view(User $user, Contact $contact): bool
     {
-        return $user->can('view_clients');
+        return $user->can('view_clients') || $user->can('view_contacts');
     }
 
     /**
@@ -28,7 +28,7 @@ class ContactPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('manage_clients');
+        return $user->can('manage_clients') || $user->can('create_contacts');
     }
 
     /**
@@ -36,7 +36,20 @@ class ContactPolicy
      */
     public function update(User $user, Contact $contact): bool
     {
-        return $user->can('manage_clients');
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->can('edit_contacts')) {
+            // Allow if user is the creator
+            return $contact->created_by === $user->id;
+        }
+
+        if ($user->can('manage_clients')) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -44,7 +57,20 @@ class ContactPolicy
      */
     public function delete(User $user, Contact $contact): bool
     {
-        return $user->can('manage_clients');
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->can('delete_contacts')) {
+            // Allow if user is the creator
+            return $contact->created_by === $user->id;
+        }
+
+        if ($user->can('manage_clients')) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

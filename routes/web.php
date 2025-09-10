@@ -59,7 +59,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // Contact routes
-    Route::resource('contacts', ContactController::class)->except(['create', 'edit']);
+    Route::resource('contacts', ContactController::class);
+    Route::post('/contacts/{id}/restore', [ContactController::class, 'restore'])->name('contacts.restore');
+    Route::get('/contacts/check-duplicate', [ContactController::class, 'checkDuplicate'])->name('contacts.check-duplicate');
 
     // Deal routes
     Route::resource('deals', DealController::class)->except(['create', 'edit']);
