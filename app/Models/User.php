@@ -6,6 +6,7 @@ namespace App\Models;
 use App\Enums\UserStatus;
 use App\Notifications\UserInvitationNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -87,14 +88,14 @@ class User extends Authenticatable
      */
     public function markAsPendingInvite(): void
     {
-    $this->update([
+        $this->update([
             'status' => UserStatus::PendingInvite,
             'invitation_token' => \Illuminate\Support\Str::random(32),
             'invitation_sent_at' => now(),
         ]);
 
-    // Send invitation email
-    $this->notify(new UserInvitationNotification($this));
+        // Send invitation email
+        $this->notify(new UserInvitationNotification($this));
     }
 
     /**
@@ -108,5 +109,21 @@ class User extends Authenticatable
             'invitation_accepted_at' => now(),
             'email_verified_at' => now(),
         ]);
+    }
+
+    /**
+     * Get deals owned by this user
+     */
+    public function ownedDeals(): HasMany
+    {
+        return $this->hasMany(Deal::class, 'owner_id');
+    }
+
+    /**
+     * Get deals created by this user
+     */
+    public function createdDeals(): HasMany
+    {
+        return $this->hasMany(Deal::class, 'created_by');
     }
 }
