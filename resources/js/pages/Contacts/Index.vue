@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import DataTable from '@/components/ui/data-table/DataTable.vue'
 // NOTE: The working columns helper lives in nested 'contacts/contacts/columns.ts' due to legacy structure.
 // Using relative path with explicit lowercase segment to prevent TS case-collision.
@@ -152,6 +153,54 @@ function handleSort(field: string) {
 }
 
 const columns = buildContactColumns()
+
+// ---------------------------------------------------------------------------
+// Create Contact Dialog State & Form
+// ---------------------------------------------------------------------------
+const isCreateDialogOpen = ref(false)
+
+const createForm = useForm({
+  first_name: '',
+  last_name: '',
+  email: '',
+  phone: '',
+  company: '',
+  job_title: '',
+  status: 'lead',
+  source: 'manual',
+  source_meta: {},
+  owner_id: '',
+  notes: '',
+})
+
+const createStatusOptions = [
+  { value: 'lead', label: 'Lead' },
+  { value: 'qualified', label: 'Qualified' },
+  { value: 'customer', label: 'Customer' },
+  { value: 'archived', label: 'Archived' },
+]
+
+const createSourceOptions = [
+  { value: 'website_form', label: 'Website Form' },
+  { value: 'meta_ads', label: 'Meta Ads' },
+  { value: 'x', label: 'X (Twitter)' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'referral', label: 'Referral' },
+  { value: 'manual', label: 'Manual' },
+  { value: 'other', label: 'Other' },
+]
+
+function submitCreate() {
+  createForm.post('/contacts', {
+    preserveScroll: true,
+    onSuccess: () => {
+      isCreateDialogOpen.value = false
+      createForm.reset()
+      // Reload just the contacts list
+      router.reload({ only: ['contacts'] })
+    },
+  })
+}
 </script>
 
 <template>
@@ -253,7 +302,7 @@ const columns = buildContactColumns()
         <div class="flex gap-4">
           <Button
             v-if="canCreateContacts"
-            @click="router.visit('/contacts/create')"
+            @click="isCreateDialogOpen = true"
           >
             Create Contact
           </Button>
@@ -296,6 +345,102 @@ const columns = buildContactColumns()
             </div>
           </CardContent>
         </Card>
+
+        <!-- Create Contact Dialog -->
+        <Dialog v-model:open="isCreateDialogOpen">
+          <DialogContent class="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Create Contact</DialogTitle>
+              <DialogDescription>Fill in the details below to add a new contact.</DialogDescription>
+            </DialogHeader>
+            <form @submit.prevent="submitCreate" class="space-y-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label for="first_name">First Name</Label>
+                  <Input id="first_name" v-model="createForm.first_name" type="text" class="mt-1" />
+                  <div v-if="createForm.errors.first_name" class="text-sm text-red-600 mt-1">{{ createForm.errors.first_name }}</div>
+                </div>
+                <div>
+                  <Label for="last_name">Last Name</Label>
+                  <Input id="last_name" v-model="createForm.last_name" type="text" class="mt-1" />
+                  <div v-if="createForm.errors.last_name" class="text-sm text-red-600 mt-1">{{ createForm.errors.last_name }}</div>
+                </div>
+                <div>
+                  <Label for="email">Email</Label>
+                  <Input id="email" v-model="createForm.email" type="email" class="mt-1" />
+                  <div v-if="createForm.errors.email" class="text-sm text-red-600 mt-1">{{ createForm.errors.email }}</div>
+                </div>
+                <div>
+                  <Label for="phone">Phone</Label>
+                  <Input id="phone" v-model="createForm.phone" type="text" class="mt-1" />
+                  <div v-if="createForm.errors.phone" class="text-sm text-red-600 mt-1">{{ createForm.errors.phone }}</div>
+                </div>
+                <div>
+                  <Label for="company">Company</Label>
+                  <Input id="company" v-model="createForm.company" type="text" class="mt-1" />
+                  <div v-if="createForm.errors.company" class="text-sm text-red-600 mt-1">{{ createForm.errors.company }}</div>
+                </div>
+                <div>
+                  <Label for="job_title">Job Title</Label>
+                  <Input id="job_title" v-model="createForm.job_title" type="text" class="mt-1" />
+                  <div v-if="createForm.errors.job_title" class="text-sm text-red-600 mt-1">{{ createForm.errors.job_title }}</div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label>Status</Label>
+                  <Select :model-value="createForm.status" @update:model-value="val => createForm.status = String(val ?? 'lead')">
+                    <SelectTrigger class="mt-1">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem v-for="option in createStatusOptions" :key="option.value" :value="option.value">{{ option.label }}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div v-if="createForm.errors.status" class="text-sm text-red-600 mt-1">{{ createForm.errors.status }}</div>
+                </div>
+                <div>
+                  <Label>Source</Label>
+                  <Select :model-value="createForm.source" @update:model-value="val => createForm.source = String(val ?? 'manual')">
+                    <SelectTrigger class="mt-1">
+                      <SelectValue placeholder="Select source" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem v-for="option in createSourceOptions" :key="option.value" :value="option.value">{{ option.label }}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div v-if="createForm.errors.source" class="text-sm text-red-600 mt-1">{{ createForm.errors.source }}</div>
+                </div>
+              </div>
+
+              <div>
+                <Label>Owner</Label>
+                <Select :model-value="createForm.owner_id" @update:model-value="val => createForm.owner_id = String(val ?? '')">
+                  <SelectTrigger class="mt-1">
+                    <SelectValue placeholder="Select owner (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Unassigned</SelectItem>
+                    <SelectItem v-for="user in users" :key="user.id" :value="String(user.id)">{{ user.name }}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div v-if="createForm.errors.owner_id" class="text-sm text-red-600 mt-1">{{ createForm.errors.owner_id }}</div>
+              </div>
+
+              <div>
+                <Label for="notes">Notes</Label>
+                <textarea id="notes" v-model="createForm.notes" rows="4" class="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" />
+                <div v-if="createForm.errors.notes" class="text-sm text-red-600 mt-1">{{ createForm.errors.notes }}</div>
+              </div>
+
+              <div class="flex justify-end gap-3 pt-4">
+                <Button type="button" variant="outline" @click="isCreateDialogOpen = false">Cancel</Button>
+                <Button type="submit" :disabled="createForm.processing">Create</Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   </AppLayout>
