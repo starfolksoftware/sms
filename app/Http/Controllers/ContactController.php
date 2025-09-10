@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreContactRequest;
+use App\Http\Requests\UpdateContactRequest;
 use App\Models\Contact;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class ContactController extends Controller
 {
@@ -15,7 +16,9 @@ class ContactController extends Controller
     {
         $this->authorize('viewAny', Contact::class);
 
-        $contacts = Contact::with('creator')->get();
+        $contacts = Contact::with(['creator', 'owner'])
+            ->withCount('deals')
+            ->get();
 
         return response()->json([
             'contacts' => $contacts,
@@ -26,22 +29,15 @@ class ContactController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreContactRequest $request): JsonResponse
     {
         $this->authorize('create', Contact::class);
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:contacts,email',
-            'phone' => 'nullable|string|max:255',
-            'company' => 'nullable|string|max:255',
-            'notes' => 'nullable|string',
-        ]);
-
+        $validated = $request->validated();
         $validated['created_by'] = auth()->id();
 
         $contact = Contact::create($validated);
-        $contact->load('creator');
+        $contact->load(['creator', 'owner']);
 
         return response()->json([
             'contact' => $contact,
@@ -56,7 +52,7 @@ class ContactController extends Controller
     {
         $this->authorize('view', $contact);
 
-        $contact->load('creator', 'deals');
+        $contact->load(['creator', 'owner', 'deals', 'tasks']);
 
         return response()->json([
             'contact' => $contact,
@@ -67,20 +63,14 @@ class ContactController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Contact $contact): JsonResponse
+    public function update(UpdateContactRequest $request, Contact $contact): JsonResponse
     {
         $this->authorize('update', $contact);
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:contacts,email,' . $contact->id,
-            'phone' => 'nullable|string|max:255',
-            'company' => 'nullable|string|max:255',
-            'notes' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $contact->update($validated);
-        $contact->load('creator');
+        $contact->load(['creator', 'owner']);
 
         return response()->json([
             'contact' => $contact,

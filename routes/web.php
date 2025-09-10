@@ -19,13 +19,9 @@ Route::get('dashboard', function () {
 // Permission-based route examples
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/admin', function () {
-        // Simple admin dashboard with basic widgets
-        return Inertia::render('admin/Index', [
-            'stats' => [
-                'users' => \App\Models\User::query()->count(),
-                'roles' => \Spatie\Permission\Models\Role::query()->count(),
-                'permissions' => \Spatie\Permission\Models\Permission::query()->count(),
-            ],
+        return response()->json([
+            'message' => 'Welcome to admin area',
+            'user' => Auth::user()->name,
         ]);
     })->middleware('role:admin')->name('admin.dashboard');
 

@@ -22,7 +22,7 @@ class RoleController extends Controller
         $roles = Role::with('permissions')->get();
         $permissions = Permission::all();
 
-    return Inertia::render('admin/Roles', [
+        return Inertia::render('settings/Roles', [
             'roles' => $roles,
             'permissions' => $permissions,
         ]);

@@ -22,5 +22,11 @@ Route::middleware('auth')->group(function () {
         return Inertia::render('settings/Appearance');
     })->name('appearance');
 
-    // Roles moved to /admin
+    // Role management routes for settings
+    Route::middleware('permission:manage_roles')->prefix('settings')->group(function () {
+        Route::get('/roles', [App\Http\Controllers\Settings\RoleController::class, 'index'])->name('settings.roles.index');
+        Route::post('/roles', [App\Http\Controllers\Settings\RoleController::class, 'store'])->name('settings.roles.store');
+        Route::put('/roles/{role}', [App\Http\Controllers\Settings\RoleController::class, 'update'])->name('settings.roles.update');
+        Route::delete('/roles/{role}', [App\Http\Controllers\Settings\RoleController::class, 'destroy'])->name('settings.roles.destroy');
+    });
 });
