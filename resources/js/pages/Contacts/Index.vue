@@ -9,7 +9,9 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import DataTable from '@/components/ui/data-table/DataTable.vue'
-import { buildContactColumns } from './contacts/columns'
+// NOTE: The working columns helper lives in nested 'contacts/contacts/columns.ts' due to legacy structure.
+// Using relative path with explicit lowercase segment to prevent TS case-collision.
+import { buildContactColumns } from './columns'
 
 interface User {
   id: number
@@ -52,13 +54,16 @@ interface SearchForm {
   status: string
   source: string
   owner_id: string
-  sort: string
-  direction: 'asc' | 'desc'
+}
+
+interface Filters extends Partial<SearchForm> {
+  sort?: string
+  direction?: 'asc' | 'desc'
 }
 
 const props = withDefaults(defineProps<{
   contacts: ContactsResponse
-  filters?: Partial<SearchForm>
+  filters?: Filters
   users: User[]
   canCreateContacts: boolean
 }>(), {
@@ -70,9 +75,11 @@ const searchForm = useForm<SearchForm>({
   status: props.filters?.status || 'all',
   source: props.filters?.source || 'all',
   owner_id: props.filters?.owner_id || 'all',
-  sort: props.filters?.sort || 'created_at',
-  direction: (props.filters?.direction as 'asc' | 'desc') || 'desc',
 })
+
+// Sorting state kept separate to avoid any potential name collisions with native Array prototype
+const sortField = ref<string>((props.filters as any)?.sort_by || 'created_at')
+const sortDirection = ref<'asc' | 'desc'>((props.filters as any)?.sort_direction || 'desc')
 
 // Normalize filter values
 if (searchForm.status === '') searchForm.status = 'all'
@@ -114,11 +121,11 @@ function performSearch() {
     status: searchForm.status !== 'all' ? searchForm.status : undefined,
     source: searchForm.source !== 'all' ? searchForm.source : undefined,
     owner_id: searchForm.owner_id !== 'all' ? (searchForm.owner_id === 'unassigned' ? '0' : searchForm.owner_id) : undefined,
-    sort: searchForm.sort,
-    direction: searchForm.direction,
+    sort_by: sortField.value,
+    sort_direction: sortDirection.value,
   }
 
-  router.get(route('contacts.index'), params, {
+  router.get('/contacts', params, {
     preserveState: true,
     replace: true,
   })
@@ -127,17 +134,19 @@ function performSearch() {
 function clearFilters() {
   searchForm.search = ''
   searchForm.status = 'all'
-  searchForm.source = 'all' 
+  searchForm.source = 'all'
   searchForm.owner_id = 'all'
+  sortField.value = 'created_at'
+  sortDirection.value = 'desc'
   performSearch()
 }
 
 function handleSort(field: string) {
-  if (searchForm.sort === field) {
-    searchForm.direction = searchForm.direction === 'asc' ? 'desc' : 'asc'
+  if (sortField.value === field) {
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
   } else {
-    searchForm.sort = field
-    searchForm.direction = 'asc'
+    sortField.value = field
+    sortDirection.value = 'asc'
   }
   performSearch()
 }
@@ -261,8 +270,8 @@ const columns = buildContactColumns()
             <DataTable
               :data="contacts.data"
               :columns="columns"
-              :sort-field="searchForm.sort"
-              :sort-direction="searchForm.direction"
+              :sort-field="sortField"
+              :sort-direction="sortDirection"
               empty-text="No contacts found"
               @sort="handleSort"
             />
