@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { Head, router, useForm } from '@inertiajs/vue3'
+import { toast } from 'vue-sonner'
 import { debounce } from '@/lib/utils'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Button } from '@/components/ui/button'
@@ -152,7 +153,31 @@ function handleSort(field: string) {
   performSearch()
 }
 
-const columns = buildContactColumns()
+// Editing state handler passed into columns for inline edit dialog
+const editingContact = ref<Contact | null>(null)
+function openEdit(contact: Contact) {
+  editingContact.value = contact
+  // Pre-fill form with split name best-effort
+  const nameParts = (contact.name || '').split(' ')
+  createForm.first_name = nameParts.shift() || ''
+  createForm.last_name = nameParts.join(' ') || ''
+  createForm.email = contact.email || ''
+  createForm.phone = contact.phone || ''
+  createForm.company = contact.company || ''
+  createForm.job_title = contact.job_title || ''
+  createForm.status = contact.status
+  createForm.source = contact.source
+  createForm.owner_id = contact.owner ? String(contact.owner.id) : 'unassigned'
+  createForm.notes = '' // notes not in list payload; left blank
+  isCreateDialogOpen.value = true
+}
+
+const columns = buildContactColumns(openEdit)
+
+// Local reactive contacts list for optimistic updates
+const localContacts = ref<Contact[]>([...props.contacts.data])
+// Sync when page prop changes
+watch(() => props.contacts.data, (val) => { localContacts.value = [...val] })
 
 // ---------------------------------------------------------------------------
 // Create Contact Dialog State & Form
@@ -202,12 +227,77 @@ function submitCreate() {
     preserveScroll: true,
     onSuccess: () => {
       isCreateDialogOpen.value = false
+      // Server will redirect back with updated list when reloaded; we optimistically prepend first.
+      if ((createForm as any).recentlySuccessful !== false) {
+        const optimisticId = Date.now()
+        try {
+          const optimistic: Contact = {
+            id: optimisticId,
+            name: [createForm.first_name, createForm.last_name].filter(Boolean).join(' ') || null,
+            email: createForm.email || null,
+            phone: createForm.phone || null,
+            company: createForm.company || null,
+            job_title: createForm.job_title || null,
+            status: createForm.status,
+            source: createForm.source,
+            owner: createForm.owner_id && createForm.owner_id !== 'unassigned'
+              ? { id: Number(createForm.owner_id), name: props.users.find(u => u.id === Number(createForm.owner_id))?.name || 'Owner' }
+              : null,
+            creator: { id: 0, name: 'You' },
+            created_at: new Date().toISOString(),
+            deals_count: 0,
+            tasks_count: 0,
+          }
+          localContacts.value = [optimistic, ...localContacts.value]
+        } catch { /* ignore */ }
+      }
+      toast.success('Contact created')
       createForm.reset()
-      // Reload just the contacts list
       router.reload({ only: ['contacts'] })
     },
     onFinish: () => {
       // Restore original transform (identity) to avoid affecting other submissions
+      createForm.transform(previousTransform)
+    }
+  })
+}
+
+function submitEdit() {
+  if (!editingContact.value) { return }
+  const id = editingContact.value.id
+  const previousTransform = (createForm as any)._transform || ((data: any) => data)
+  createForm.transform((data) => ({
+    ...data,
+    owner_id: data.owner_id === '' || data.owner_id === 'unassigned' ? null : data.owner_id,
+    name: [data.first_name, data.last_name].filter(Boolean).join(' '),
+  }))
+  createForm.put(`/contacts/${id}`, {
+    preserveScroll: true,
+    onSuccess: () => {
+      // Optimistically update local array (replace by id)
+      const idx = localContacts.value.findIndex(c => c.id === id)
+      if (idx !== -1) {
+        localContacts.value[idx] = {
+          ...localContacts.value[idx],
+          name: [createForm.first_name, createForm.last_name].filter(Boolean).join(' ') || null,
+          email: createForm.email || null,
+          phone: createForm.phone || null,
+          company: createForm.company || null,
+          job_title: createForm.job_title || null,
+          status: createForm.status,
+          source: createForm.source,
+          owner: createForm.owner_id && createForm.owner_id !== 'unassigned'
+            ? { id: Number(createForm.owner_id), name: props.users.find(u => u.id === Number(createForm.owner_id))?.name || 'Owner' }
+            : null,
+        }
+      }
+      toast.success('Contact updated')
+      isCreateDialogOpen.value = false
+      editingContact.value = null
+      router.reload({ only: ['contacts'] })
+      createForm.reset()
+    },
+    onFinish: () => {
       createForm.transform(previousTransform)
     }
   })
@@ -328,7 +418,7 @@ function submitCreate() {
           </CardHeader>
           <CardContent>
             <DataTable
-              :data="contacts.data"
+              :data="localContacts"
               :columns="columns"
               :sort-field="sortField"
               :sort-direction="sortDirection"
@@ -357,14 +447,16 @@ function submitCreate() {
           </CardContent>
         </Card>
 
-        <!-- Create Contact Dialog -->
+        <!-- Create / Edit Contact Dialog -->
         <Dialog v-model:open="isCreateDialogOpen">
           <DialogContent class="max-w-3xl">
             <DialogHeader>
-              <DialogTitle>Create Contact</DialogTitle>
-              <DialogDescription>Fill in the details below to add a new contact.</DialogDescription>
+              <DialogTitle>{{ editingContact ? 'Edit Contact' : 'Create Contact' }}</DialogTitle>
+              <DialogDescription>
+                {{ editingContact ? 'Update the contact details and save your changes.' : 'Fill in the details below to add a new contact.' }}
+              </DialogDescription>
             </DialogHeader>
-            <form @submit.prevent="submitCreate" class="space-y-6">
+            <form @submit.prevent="editingContact ? submitEdit() : submitCreate()" class="space-y-6">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label for="first_name">First Name</Label>
@@ -447,7 +539,7 @@ function submitCreate() {
 
               <div class="flex justify-end gap-3 pt-4">
                 <Button type="button" variant="outline" @click="isCreateDialogOpen = false">Cancel</Button>
-                <Button type="submit" :disabled="createForm.processing">Create</Button>
+                <Button type="submit" :disabled="createForm.processing">{{ editingContact ? 'Save' : 'Create' }}</Button>
               </div>
             </form>
           </DialogContent>

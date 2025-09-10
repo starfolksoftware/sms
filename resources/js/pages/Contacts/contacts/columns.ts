@@ -47,7 +47,7 @@ function formatDate(dateString: string) {
   return new Date(dateString).toLocaleDateString()
 }
 
-export function buildContactColumns(): ColumnDef<Contact>[] {
+export function buildContactColumns(openEdit?: (contact: Contact) => void): ColumnDef<Contact>[] {
   return [
     {
       id: 'name',
@@ -119,12 +119,18 @@ export function buildContactColumns(): ColumnDef<Contact>[] {
           h(Button, {
             variant: 'ghost',
             size: 'sm',
-            onClick: () => router.visit(route('contacts.show', contact.id))
+            onClick: () => router.visit(`/contacts/${contact.id}`)
           }, () => 'View'),
           h(Button, {
             variant: 'ghost', 
             size: 'sm',
-            onClick: () => router.visit(route('contacts.edit', contact.id))
+            onClick: () => {
+              if (openEdit) {
+                openEdit(contact)
+              } else {
+                router.visit(`/contacts/${contact.id}/edit`)
+              }
+            }
           }, () => 'Edit'),
         ])
       },
