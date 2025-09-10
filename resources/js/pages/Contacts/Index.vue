@@ -309,7 +309,7 @@ function submitEdit() {
 
   <AppLayout :breadcrumbs="[{ title: 'Contacts', href: '/contacts' }]">
     <template #header>
-  <div class="mx-auto mt-6 flex items-center justify-between w-full max-w-7xl px-6 lg:px-8">
+  <div class="mt-6 flex items-center justify-between w-full px-6 lg:px-8">
         <div>
           <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Contacts</h2>
           <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage and track your contacts.</p>
@@ -323,8 +323,8 @@ function submitEdit() {
       </div>
     </template>
 
-    <div class="py-12">
-      <div class="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-6">
+    <div class="py-12 px-0">
+      <div class="w-full sm:px-6 lg:px-8 space-y-6">
         <!-- Search and Filters -->
         <Card>
           <CardHeader>

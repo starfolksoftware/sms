@@ -164,7 +164,7 @@ function performDelete() {
 
   <AppLayout :breadcrumbs="[{ title: 'Contacts', href: '/contacts' }, { title: contact.name || 'Contact', href: `/contacts/${contact.id}` }]">
     <template #header>
-  <div class="mx-auto mt-6 flex items-center justify-between w-full max-w-7xl px-6 lg:px-8">
+  <div class="mt-6 flex items-center justify-between w-full px-6 lg:px-8">
         <div>
           <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
             {{ contact.name || 'Contact' }}
@@ -189,8 +189,8 @@ function performDelete() {
       </div>
     </template>
 
-    <div class="py-12">
-      <div class="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-6">
+    <div class="py-12 px-6 lg:px-8">
+      <div class="space-y-6">
         <!-- Contact Information -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <!-- Main Info -->

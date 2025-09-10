@@ -72,14 +72,14 @@ const sourceOptions = [
 
   <AppLayout :breadcrumbs="[{ title: 'Contacts', href: '/contacts' }, { title: props.contact.name || 'Contact', href: `/contacts/${props.contact.id}` }, { title: 'Edit', href: `/contacts/${props.contact.id}/edit` }]">
     <template #header>
-  <div class="mx-auto mt-6 w-full max-w-7xl px-6 lg:px-8">
+  <div class="mt-6 w-full px-6 lg:px-8">
         <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Edit Contact</h2>
         <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Update contact details.</p>
       </div>
     </template>
 
-    <div class="py-12">
-      <div class="mx-auto max-w-4xl sm:px-6 lg:px-8">
+    <div class="py-12 px-0">
+      <div class="w-full sm:px-6 lg:px-8 max-w-none">
         <Card>
           <CardHeader>
             <CardTitle>Contact Information</CardTitle>
