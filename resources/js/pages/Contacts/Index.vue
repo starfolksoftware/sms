@@ -191,6 +191,13 @@ const createSourceOptions = [
 ]
 
 function submitCreate() {
+  // Normalize owner_id: treat sentinel 'unassigned' or empty string as null (no owner)
+  const previousTransform = (createForm as any)._transform || ((data: any) => data)
+  createForm.transform((data) => ({
+    ...data,
+    owner_id: data.owner_id === '' || data.owner_id === 'unassigned' ? null : data.owner_id,
+  }))
+
   createForm.post('/contacts', {
     preserveScroll: true,
     onSuccess: () => {
@@ -199,6 +206,10 @@ function submitCreate() {
       // Reload just the contacts list
       router.reload({ only: ['contacts'] })
     },
+    onFinish: () => {
+      // Restore original transform (identity) to avoid affecting other submissions
+      createForm.transform(previousTransform)
+    }
   })
 }
 </script>
@@ -421,7 +432,7 @@ function submitCreate() {
                     <SelectValue placeholder="Select owner (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Unassigned</SelectItem>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
                     <SelectItem v-for="user in users" :key="user.id" :value="String(user.id)">{{ user.name }}</SelectItem>
                   </SelectContent>
                 </Select>
