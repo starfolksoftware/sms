@@ -12,6 +12,8 @@ it('logs contact deletion events', function () {
     $this->actingAs($user);
 
     $contact = Contact::factory()->create([
+        'first_name' => 'John',
+        'last_name' => 'Doe',
         'name' => 'John Doe',
         'email' => 'john@example.com',
         'company' => 'Example Corp',
