@@ -46,7 +46,7 @@ const form = useForm({
 })
 
 function submit() {
-  form.put(route('contacts.update', props.contact.id))
+  form.put(`/contacts/${props.contact.id}`)
 }
 
 const statusOptions = [
@@ -70,11 +70,12 @@ const sourceOptions = [
 <template>
   <Head title="Edit Contact" />
 
-  <AppLayout>
+  <AppLayout :breadcrumbs="[{ title: 'Contacts', href: '/contacts' }, { title: props.contact.name || 'Contact', href: `/contacts/${props.contact.id}` }, { title: 'Edit', href: `/contacts/${props.contact.id}/edit` }]">
     <template #header>
-      <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-        Edit Contact
-      </h2>
+  <div class="mx-auto mt-6 w-full max-w-7xl px-6 lg:px-8">
+        <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Edit Contact</h2>
+        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Update contact details.</p>
+      </div>
     </template>
 
     <div class="py-12">
@@ -263,7 +264,7 @@ const sourceOptions = [
                 <Button
                   type="button"
                   variant="outline"
-                  @click="$inertia.visit(route('contacts.show', contact.id))"
+                  @click="$inertia.visit(`/contacts/${contact.id}`)"
                 >
                   Cancel
                 </Button>

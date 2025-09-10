@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3'
+import { Head, router, useForm } from '@inertiajs/vue3'
+import { ref } from 'vue'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 
 interface User {
@@ -52,6 +57,67 @@ const props = defineProps<{
   canDeleteContact: boolean
 }>()
 
+// Edit & Delete Dialog State
+const isEditDialogOpen = ref(false)
+const isDeleteDialogOpen = ref(false)
+
+// Edit form (re-using fields similar to standalone edit page)
+const editForm = useForm({
+  first_name: props.contact.first_name || '',
+  last_name: props.contact.last_name || '',
+  email: props.contact.email || '',
+  phone: props.contact.phone || '',
+  company: props.contact.company || '',
+  job_title: props.contact.job_title || '',
+  status: props.contact.status,
+  source: props.contact.source,
+  owner_id: props.contact.owner ? String(props.contact.owner.id) : '',
+  notes: props.contact.notes || '',
+})
+
+const statusOptions = [
+  { value: 'lead', label: 'Lead' },
+  { value: 'qualified', label: 'Qualified' },
+  { value: 'customer', label: 'Customer' },
+  { value: 'archived', label: 'Archived' },
+]
+
+const sourceOptions = [
+  { value: 'website_form', label: 'Website Form' },
+  { value: 'meta_ads', label: 'Meta Ads' },
+  { value: 'x', label: 'X (Twitter)' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'referral', label: 'Referral' },
+  { value: 'manual', label: 'Manual' },
+  { value: 'other', label: 'Other' },
+]
+
+function openEditDialog() {
+  // Refresh form values from latest contact prop in case of stale data
+  editForm.first_name = props.contact.first_name || ''
+  editForm.last_name = props.contact.last_name || ''
+  editForm.email = props.contact.email || ''
+  editForm.phone = props.contact.phone || ''
+  editForm.company = props.contact.company || ''
+  editForm.job_title = props.contact.job_title || ''
+  editForm.status = props.contact.status
+  editForm.source = props.contact.source
+  editForm.owner_id = props.contact.owner ? String(props.contact.owner.id) : ''
+  editForm.notes = props.contact.notes || ''
+  isEditDialogOpen.value = true
+}
+
+function submitEdit() {
+  editForm.put(`/contacts/${props.contact.id}`, {
+    preserveScroll: true,
+    onSuccess: () => {
+      isEditDialogOpen.value = false
+      // Reload current contact data
+      router.reload({ only: ['contact'] })
+    }
+  })
+}
+
 function formatSource(source: string) {
   const sourceLabels = {
     website_form: 'Website Form',
@@ -75,33 +141,47 @@ function getStatusVariant(status: string) {
   return variants[status as keyof typeof variants] || 'default'
 }
 
-function deleteContact() {
-  if (confirm('Are you sure you want to delete this contact?')) {
-    router.delete(route('contacts.destroy', props.contact.id))
-  }
+function openDeleteDialog() {
+  isDeleteDialogOpen.value = true
+}
+
+function performDelete() {
+  router.delete(`/contacts/${props.contact.id}`, {
+    preserveScroll: true,
+    onSuccess: () => {
+      isDeleteDialogOpen.value = false
+      router.visit('/contacts')
+    },
+    onFinish: () => {
+      isDeleteDialogOpen.value = false
+    }
+  })
 }
 </script>
 
 <template>
   <Head :title="contact.name || 'Contact'" />
 
-  <AppLayout>
+  <AppLayout :breadcrumbs="[{ title: 'Contacts', href: '/contacts' }, { title: contact.name || 'Contact', href: `/contacts/${contact.id}` }]">
     <template #header>
-      <div class="flex items-center justify-between">
-        <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-          {{ contact.name || 'Contact' }}
-        </h2>
+  <div class="mx-auto mt-6 flex items-center justify-between w-full max-w-7xl px-6 lg:px-8">
+        <div>
+          <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
+            {{ contact.name || 'Contact' }}
+          </h2>
+          <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Detailed contact information and recent activity.</p>
+        </div>
         <div class="flex items-center gap-3">
           <Button
             v-if="canEditContact"
-            @click="router.visit(route('contacts.edit', contact.id))"
+            @click="openEditDialog"
           >
             Edit
           </Button>
           <Button
             v-if="canDeleteContact"
             variant="destructive"
-            @click="deleteContact"
+            @click="openDeleteDialog"
           >
             Delete
           </Button>
@@ -252,7 +332,7 @@ function deleteContact() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  @click="router.visit(route('deals.show', deal.id))"
+                  @click="router.visit(`/deals/${deal.id}`)"
                 >
                   View
                 </Button>
@@ -282,7 +362,7 @@ function deleteContact() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  @click="router.visit(route('tasks.show', task.id))"
+                  @click="router.visit(`/tasks/${task.id}`)"
                 >
                   View
                 </Button>
@@ -293,4 +373,97 @@ function deleteContact() {
       </div>
     </div>
   </AppLayout>
+
+  <!-- Edit Contact Dialog -->
+  <Dialog v-model:open="isEditDialogOpen">
+    <DialogContent class="max-w-3xl">
+      <DialogHeader>
+        <DialogTitle>Edit Contact</DialogTitle>
+        <DialogDescription>Update the contact details and save your changes.</DialogDescription>
+      </DialogHeader>
+      <form @submit.prevent="submitEdit" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <Label for="first_name">First Name</Label>
+            <Input id="first_name" v-model="editForm.first_name" type="text" class="mt-1" />
+            <div v-if="editForm.errors.first_name" class="text-sm text-red-600 mt-1">{{ editForm.errors.first_name }}</div>
+          </div>
+          <div>
+            <Label for="last_name">Last Name</Label>
+            <Input id="last_name" v-model="editForm.last_name" type="text" class="mt-1" />
+            <div v-if="editForm.errors.last_name" class="text-sm text-red-600 mt-1">{{ editForm.errors.last_name }}</div>
+          </div>
+          <div>
+            <Label for="email">Email</Label>
+            <Input id="email" v-model="editForm.email" type="email" class="mt-1" />
+            <div v-if="editForm.errors.email" class="text-sm text-red-600 mt-1">{{ editForm.errors.email }}</div>
+          </div>
+          <div>
+            <Label for="phone">Phone</Label>
+            <Input id="phone" v-model="editForm.phone" type="text" class="mt-1" />
+            <div v-if="editForm.errors.phone" class="text-sm text-red-600 mt-1">{{ editForm.errors.phone }}</div>
+          </div>
+          <div>
+            <Label for="company">Company</Label>
+            <Input id="company" v-model="editForm.company" type="text" class="mt-1" />
+            <div v-if="editForm.errors.company" class="text-sm text-red-600 mt-1">{{ editForm.errors.company }}</div>
+          </div>
+          <div>
+            <Label for="job_title">Job Title</Label>
+            <Input id="job_title" v-model="editForm.job_title" type="text" class="mt-1" />
+            <div v-if="editForm.errors.job_title" class="text-sm text-red-600 mt-1">{{ editForm.errors.job_title }}</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <Label>Status</Label>
+            <Select :model-value="editForm.status" @update:model-value="val => editForm.status = String(val ?? 'lead')">
+              <SelectTrigger class="mt-1">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="o in statusOptions" :key="o.value" :value="o.value">{{ o.label }}</SelectItem>
+              </SelectContent>
+            </Select>
+            <div v-if="editForm.errors.status" class="text-sm text-red-600 mt-1">{{ editForm.errors.status }}</div>
+          </div>
+          <div>
+            <Label>Source</Label>
+            <Select :model-value="editForm.source" @update:model-value="val => editForm.source = String(val ?? 'manual')">
+              <SelectTrigger class="mt-1">
+                <SelectValue placeholder="Select source" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="o in sourceOptions" :key="o.value" :value="o.value">{{ o.label }}</SelectItem>
+              </SelectContent>
+            </Select>
+            <div v-if="editForm.errors.source" class="text-sm text-red-600 mt-1">{{ editForm.errors.source }}</div>
+          </div>
+        </div>
+        <div>
+          <Label for="notes">Notes</Label>
+            <textarea id="notes" v-model="editForm.notes" rows="4" class="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+          <div v-if="editForm.errors.notes" class="text-sm text-red-600 mt-1">{{ editForm.errors.notes }}</div>
+        </div>
+        <DialogFooter class="flex justify-end gap-3 pt-4">
+          <Button type="button" variant="outline" @click="isEditDialogOpen = false">Cancel</Button>
+          <Button type="submit" :disabled="editForm.processing">Save</Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
+  </Dialog>
+
+  <!-- Delete Confirmation Dialog -->
+  <Dialog v-model:open="isDeleteDialogOpen">
+    <DialogContent class="max-w-md">
+      <DialogHeader>
+        <DialogTitle>Delete Contact</DialogTitle>
+        <DialogDescription>This action cannot be undone. This will permanently delete the contact.</DialogDescription>
+      </DialogHeader>
+      <DialogFooter class="flex justify-end gap-3 pt-2">
+        <Button variant="outline" type="button" @click="isDeleteDialogOpen = false">Cancel</Button>
+        <Button variant="destructive" type="button" :disabled="editForm.processing" @click="performDelete">Delete</Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>

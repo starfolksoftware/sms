@@ -307,11 +307,20 @@ function submitEdit() {
 <template>
   <Head title="Contacts" />
 
-  <AppLayout>
+  <AppLayout :breadcrumbs="[{ title: 'Contacts', href: '/contacts' }]">
     <template #header>
-      <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-        Contacts
-      </h2>
+  <div class="mx-auto mt-6 flex items-center justify-between w-full max-w-7xl px-6 lg:px-8">
+        <div>
+          <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Contacts</h2>
+          <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage and track your contacts.</p>
+        </div>
+        <Button
+          v-if="canCreateContacts"
+          @click="isCreateDialogOpen = true"
+        >
+          Create Contact
+        </Button>
+      </div>
     </template>
 
     <div class="py-12">
@@ -399,15 +408,7 @@ function submitEdit() {
           </CardContent>
         </Card>
 
-        <!-- Action Buttons -->
-        <div class="flex gap-4">
-          <Button
-            v-if="canCreateContacts"
-            @click="isCreateDialogOpen = true"
-          >
-            Create Contact
-          </Button>
-        </div>
+  <!-- Action Buttons moved to header -->
 
         <!-- Contacts Table -->
         <Card>

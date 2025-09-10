@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useForm, Head } from '@inertiajs/vue3'
+import { useForm, Head, router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,9 +12,7 @@ interface User {
   name: string
 }
 
-const props = defineProps<{
-  users: User[]
-}>()
+defineProps<{ users: User[] }>()
 
 const form = useForm({
   first_name: '',
@@ -31,7 +29,7 @@ const form = useForm({
 })
 
 function submit() {
-  form.post(route('contacts.store'))
+  form.post('/contacts')
 }
 
 const statusOptions = [
@@ -57,9 +55,10 @@ const sourceOptions = [
 
   <AppLayout>
     <template #header>
-      <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-        Create Contact
-      </h2>
+      <div>
+        <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Create Contact</h2>
+        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Add a new contact to your database.</p>
+      </div>
     </template>
 
     <div class="py-12">
@@ -248,7 +247,7 @@ const sourceOptions = [
                 <Button
                   type="button"
                   variant="outline"
-                  @click="$inertia.visit(route('contacts.index'))"
+                  @click="router.visit('/contacts')"
                 >
                   Cancel
                 </Button>
