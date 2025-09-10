@@ -30,24 +30,13 @@ function getStatusVariant(status: string) {
   return variants[status as keyof typeof variants] || 'default'
 }
 
-function formatSource(source: string) {
-  const sourceLabels = {
-    website_form: 'Website Form',
-    meta_ads: 'Meta Ads',
-    x: 'X (Twitter)',
-    instagram: 'Instagram',
-    referral: 'Referral',
-    manual: 'Manual',
-    other: 'Other',
-  }
-  return sourceLabels[source as keyof typeof sourceLabels] || source
-}
 
 function formatDate(dateString: string) {
   return new Date(dateString).toLocaleDateString()
 }
 
 export function buildContactColumns(openEdit?: (contact: Contact) => void): ColumnDef<Contact>[] {
+  // Essential columns only: name, email, status, owner, created date, actions
   return [
     {
       id: 'name',
@@ -69,19 +58,6 @@ export function buildContactColumns(openEdit?: (contact: Contact) => void): Colu
       meta: { sortable: true, sortField: 'email' },
     },
     {
-      id: 'phone',
-      header: 'Phone',
-      accessorKey: 'phone',
-      cell: ({ row }) => row.original.phone || '—',
-    },
-    {
-      id: 'company',
-      header: 'Company',
-      accessorKey: 'company',
-      cell: ({ row }) => row.original.company || '—',
-      meta: { sortable: true, sortField: 'company' },
-    },
-    {
       id: 'status',
       header: 'Status',
       cell: ({ row }) => {
@@ -92,12 +68,6 @@ export function buildContactColumns(openEdit?: (contact: Contact) => void): Colu
         }, () => status)
       },
       meta: { sortable: true, sortField: 'status' },
-    },
-    {
-      id: 'source',
-      header: 'Source',
-      cell: ({ row }) => formatSource(row.original.source),
-      meta: { sortable: true, sortField: 'source' },
     },
     {
       id: 'owner',
