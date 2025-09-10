@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { Head, router, useForm } from '@inertiajs/vue3'
+import { Head, router, useForm, usePage } from '@inertiajs/vue3'
 import { toast } from 'vue-sonner'
 import { debounce } from '@/lib/utils'
 import AppLayout from '@/layouts/AppLayout.vue'
@@ -128,9 +128,17 @@ function performSearch() {
     sort_direction: sortDirection.value,
   }
 
+  isLoading.value = true
   router.get('/contacts', params, {
-    preserveState: true,
+    preserveState: () => false,
     replace: true,
+    onSuccess: () => {
+      const page: any = usePage()
+      if (page.props?.contacts?.data) {
+        localContacts.value = [...page.props.contacts.data]
+      }
+    },
+    onFinish: () => { isLoading.value = false }
   })
 }
 
@@ -178,8 +186,9 @@ const columns = buildContactColumns(openEdit)
 
 // Local reactive contacts list for optimistic updates
 const localContacts = ref<Contact[]>([...props.contacts.data])
-// Sync when page prop changes
-watch(() => props.contacts.data, (val) => { localContacts.value = [...val] })
+const isLoading = ref(false)
+// Sync when prop reference changes post-response
+watch(() => props.contacts, (val) => { if (!isLoading.value && val?.data) { localContacts.value = [...val.data] } })
 
 // ---------------------------------------------------------------------------
 // Create Contact Dialog State & Form
@@ -348,7 +357,7 @@ function submitEdit() {
                 <Label>Status</Label>
                 <Select
                   :model-value="searchForm.status"
-                  @update:model-value="(value) => { searchForm.status = String(value ?? 'all'); performSearch(); }"
+                  @update:model-value="(value: any) => { searchForm.status = String((value ?? 'all')); performSearch(); }"
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All Statuses" />
@@ -368,7 +377,7 @@ function submitEdit() {
                 <Label>Source</Label>
                 <Select
                   :model-value="searchForm.source"
-                  @update:model-value="(value) => { searchForm.source = String(value ?? 'all'); performSearch(); }"
+                  @update:model-value="(value: any) => { searchForm.source = String((value ?? 'all')); performSearch(); }"
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All Sources" />
@@ -388,7 +397,7 @@ function submitEdit() {
                 <Label>Owner</Label>
                 <Select
                   :model-value="searchForm.owner_id"
-                  @update:model-value="(value) => { searchForm.owner_id = String(value ?? 'all'); performSearch(); }"
+                  @update:model-value="(value: any) => { searchForm.owner_id = String((value ?? 'all')); performSearch(); }"
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All Owners" />
@@ -497,7 +506,7 @@ function submitEdit() {
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label>Status</Label>
-                  <Select :model-value="createForm.status" @update:model-value="val => createForm.status = String(val ?? 'lead')">
+                  <Select :model-value="createForm.status" @update:model-value="(val: any) => createForm.status = String((val ?? 'lead'))">
                     <SelectTrigger class="mt-1">
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
@@ -509,7 +518,7 @@ function submitEdit() {
                 </div>
                 <div>
                   <Label>Source</Label>
-                  <Select :model-value="createForm.source" @update:model-value="val => createForm.source = String(val ?? 'manual')">
+                  <Select :model-value="createForm.source" @update:model-value="(val: any) => createForm.source = String((val ?? 'manual'))">
                     <SelectTrigger class="mt-1">
                       <SelectValue placeholder="Select source" />
                     </SelectTrigger>
@@ -523,7 +532,7 @@ function submitEdit() {
 
               <div>
                 <Label>Owner</Label>
-                <Select :model-value="createForm.owner_id" @update:model-value="val => createForm.owner_id = String(val ?? '')">
+                <Select :model-value="createForm.owner_id" @update:model-value="(val: any) => createForm.owner_id = String((val ?? ''))">
                   <SelectTrigger class="mt-1">
                     <SelectValue placeholder="Select owner (optional)" />
                   </SelectTrigger>
