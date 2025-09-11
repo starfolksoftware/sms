@@ -9,10 +9,25 @@ return new class extends Migration {
     {
         Schema::create('contacts', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
+            $table->string('first_name')->nullable();
+            $table->string('last_name')->nullable();
+            $table->string('name')->nullable();
+            $table->string('email')->nullable();
+            $table->string('email_normalized')->nullable()->storedAs('LOWER(TRIM(email))');
+            $table->string('phone')->nullable();
+            $table->string('company')->nullable();
+            $table->string('job_title')->nullable();
+            $table->string('status')->default('lead');
+            $table->string('source')->default('manual');
+            $table->json('source_meta')->nullable();
             $table->foreignId('owner_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->text('notes')->nullable();
             $table->timestamps();
+            $table->softDeletes();
+            $table->unique('email_normalized');
+            $table->index('status');
+            $table->index('owner_id');
+            $table->index(['source','created_at']);
         });
     }
 

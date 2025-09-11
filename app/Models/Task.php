@@ -25,4 +25,9 @@ class Task extends Model
     {
         return $this->belongsTo(User::class, 'creator_id');
     }
+
+    public function contact(): BelongsTo
+    {
+        return $this->belongsTo(Contact::class);
+    }
 }
