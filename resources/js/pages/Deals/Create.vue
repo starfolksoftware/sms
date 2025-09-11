@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { Head, useForm } from '@inertiajs/vue3'
 import { toast } from 'vue-sonner'
 import AppLayout from '@/layouts/AppLayout.vue'
@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import SearchableSelectField from '@/components/form/SearchableSelectField.vue'
 
 interface Props {
   prefill?: { contact_id?: number }
@@ -42,6 +43,19 @@ const form = useForm({
 const contacts = ref<Array<{ id: number; name: string; email: string }>>([])
 const products = ref<Array<{ id: number; name: string }>>([])
 const users = ref<Array<{ id: number; name: string }>>([])
+
+// String ids for searchable selects
+const contactId = ref<string | null>(props.prefill?.contact_id ? String(props.prefill.contact_id) : null)
+const productId = ref<string | null>(null)
+const ownerId = ref<string | null>(null)
+
+watch(contactId, (v) => { form.contact_id = v ? Number(v) : null })
+watch(productId, (v) => { form.product_id = v ? Number(v) : null })
+watch(ownerId, (v) => { form.owner_id = v ? Number(v) : null })
+
+const contactOptions = computed(() => contacts.value.map(c => ({ value: String(c.id), label: `${c.name} (${c.email})` })))
+const productOptions = computed(() => [{ value: '', label: 'No product' }, ...products.value.map(p => ({ value: String(p.id), label: p.name }))])
+const userOptions = computed(() => [{ value: '', label: 'Unassigned' }, ...users.value.map(u => ({ value: String(u.id), label: u.name }))])
 
 const loadContacts = async () => {
   try {
@@ -114,48 +128,34 @@ const submit = () => {
 
               <div>
                 <Label for="contact_id">Contact *</Label>
-                <Select v-model="form.contact_id">
-                  <SelectTrigger class="mt-1" :class="form.errors.contact_id ? 'border-red-300' : ''">
-                    <SelectValue placeholder="Select a contact" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem v-for="contact in contacts" :key="contact.id" :value="contact.id">
-                      {{ contact.name }} ({{ contact.email }})
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <SearchableSelectField
+                  class="mt-1"
+                  :options="contactOptions"
+                  v-model="contactId"
+                  placeholder="Select a contact"
+                />
                 <div v-if="form.errors.contact_id" class="mt-1 text-sm text-red-600">{{ form.errors.contact_id }}</div>
               </div>
 
               <div>
                 <Label for="product_id">Product</Label>
-                <Select v-model="form.product_id">
-                  <SelectTrigger class="mt-1">
-                    <SelectValue placeholder="Select a product (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem :value="null">No product</SelectItem>
-                    <SelectItem v-for="product in products" :key="product.id" :value="product.id">
-                      {{ product.name }}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <SearchableSelectField
+                  class="mt-1"
+                  :options="productOptions"
+                  v-model="productId"
+                  placeholder="Select a product (optional)"
+                />
                 <div v-if="form.errors.product_id" class="mt-1 text-sm text-red-600">{{ form.errors.product_id }}</div>
               </div>
 
               <div>
                 <Label for="owner_id">Owner</Label>
-                <Select v-model="form.owner_id">
-                  <SelectTrigger class="mt-1">
-                    <SelectValue placeholder="Assign to user (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem :value="null">Unassigned</SelectItem>
-                    <SelectItem v-for="user in users" :key="user.id" :value="user.id">
-                      {{ user.name }}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <SearchableSelectField
+                  class="mt-1"
+                  :options="userOptions"
+                  v-model="ownerId"
+                  placeholder="Assign to user (optional)"
+                />
                 <div v-if="form.errors.owner_id" class="mt-1 text-sm text-red-600">{{ form.errors.owner_id }}</div>
               </div>
 

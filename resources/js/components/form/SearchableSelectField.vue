@@ -37,7 +37,7 @@ watch(() => props.options, () => { search.value = '' })
 </script>
 
 <template>
-  <Select :model-value="internalValue" :disabled="disabled" @update:model-value="val => internalValue = val as any">
+  <Select v-model="internalValue" :disabled="disabled">
     <SelectTrigger :class="props.class">
       <SelectValue :placeholder="placeholder">
         <span v-if="internalValue">
