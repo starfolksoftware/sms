@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { Head, router, useForm } from '@inertiajs/vue3'
+import { ref } from 'vue'
+import { Head, router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
 import DataTable from '@/components/ui/data-table/DataTable.vue'
 
 interface User {
@@ -163,7 +162,7 @@ const columns = [
 ]
 
 const applyFilters = () => {
-  router.get(route('deals.index'), {
+  router.get('/crm/deals', {
     q: search.value,
     status: selectedStatus.value,
     stage: selectedStage.value,
@@ -185,101 +184,92 @@ const clearFilters = () => {
   <Head title="Deals" />
   
   <AppLayout>
-    <div class="px-4 sm:px-6 lg:px-8">
-      <div class="sm:flex sm:items-center">
-        <div class="sm:flex-auto">
-          <h1 class="text-2xl font-semibold text-gray-900">Deals</h1>
-          <p class="mt-2 text-sm text-gray-700">
-            A list of all deals including their title, contact, amount, stage and status.
-          </p>
+    <template #header>
+      <div class="mt-6 flex items-center justify-between w-full px-6 lg:px-8">
+        <div>
+          <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Deals</h2>
+          <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">A list of all deals including their title, contact, amount, stage and status.</p>
         </div>
-        <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-          <Button
-            @click="router.visit(route('deals.create'))"
-            class="inline-flex items-center justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
-          >
-            Add Deal
-          </Button>
-        </div>
+        <Button @click="router.visit('/crm/deals/new')">Add Deal</Button>
       </div>
+    </template>
 
-      <!-- Filters -->
-      <Card class="mt-6">
-        <CardHeader>
-          <CardTitle class="text-lg">Filters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <Label for="search">Search</Label>
-              <Input
-                id="search"
-                v-model="search"
-                placeholder="Search deals..."
-                @keyup.enter="applyFilters"
-              />
+    <div class="py-12 px-0">
+      <div class="w-full sm:px-6 lg:px-8 space-y-6">
+        <!-- Filters -->
+        <Card>
+          <CardHeader>
+            <CardTitle class="text-lg">Filters</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <Label for="search">Search</Label>
+                <Input
+                  id="search"
+                  v-model="search"
+                  placeholder="Search deals..."
+                  @keyup.enter="applyFilters"
+                />
+              </div>
+              <div>
+                <Label for="status">Status</Label>
+                <Select v-model="selectedStatus">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Statuses</SelectItem>
+                    <SelectItem
+                      v-for="status in enums.statuses"
+                      :key="status"
+                      :value="status"
+                    >
+                      {{ status }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label for="stage">Stage</Label>
+                <Select v-model="selectedStage">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select stage" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Stages</SelectItem>
+                    <SelectItem
+                      v-for="stage in enums.stages"
+                      :key="stage"
+                      :value="stage"
+                    >
+                      {{ stage }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div class="flex items-end gap-2">
+                <Button @click="applyFilters" class="flex-1">Apply Filters</Button>
+                <Button @click="clearFilters" variant="outline">Clear</Button>
+              </div>
             </div>
-            <div>
-              <Label for="status">Status</Label>
-              <Select v-model="selectedStatus">
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">All Statuses</SelectItem>
-                  <SelectItem 
-                    v-for="status in enums.statuses" 
-                    :key="status" 
-                    :value="status"
-                  >
-                    {{ status }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label for="stage">Stage</Label>
-              <Select v-model="selectedStage">
-                <SelectTrigger>
-                  <SelectValue placeholder="Select stage" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">All Stages</SelectItem>
-                  <SelectItem 
-                    v-for="stage in enums.stages" 
-                    :key="stage" 
-                    :value="stage"
-                  >
-                    {{ stage }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div class="flex items-end space-x-2">
-              <Button @click="applyFilters" class="flex-1">
-                Apply Filters
-              </Button>
-              <Button @click="clearFilters" variant="outline">
-                Clear
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <!-- Deals Table -->
-      <Card class="mt-6">
-        <CardContent class="p-0">
-          <DataTable
-            :columns="columns"
-            :data="deals.data"
-            :enable-pagination="true"
-            :pagination-links="deals.links"
-            :current-page="deals.current_page"
-            :last-page="deals.last_page"
-          />
-        </CardContent>
-      </Card>
+        <!-- Deals Table -->
+        <Card>
+          <CardContent class="p-0">
+            <DataTable
+              :columns="columns"
+              :data="deals.data"
+              :enable-pagination="true"
+              :pagination-links="deals.links"
+              :current-page="deals.current_page"
+              :last-page="deals.last_page"
+            />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   </AppLayout>
 </template>

@@ -47,11 +47,32 @@ class Deal extends Model
         ];
     }
 
+    /**
+     * Backward-compatible accessor for legacy 'value' field.
+     */
+    public function getValueAttribute(): ?string
+    {
+        $amount = $this->getAttribute('amount');
+        if ($amount === null) {
+            return null;
+        }
+        return number_format((float) $amount, 2, '.', '');
+    }
+
+    /**
+     * Backward-compatible mutator for legacy 'value' field -> maps to 'amount'.
+     */
+    public function setValueAttribute($value): void
+    {
+        $this->attributes['amount'] = $value;
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
             ->useLogName('data_ops')
-            ->logOnly(['title', 'amount', 'status', 'stage'])
+            // Include legacy 'value' alias for backward compatibility in logs
+            ->logOnly(['title', 'amount', 'value', 'status', 'stage'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }

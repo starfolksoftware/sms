@@ -96,8 +96,14 @@ test('admin can restore deals', function () {
     expect($this->policy->restore($this->adminUser, $this->deal))->toBeTrue();
 });
 
-test('non-admin cannot restore deals', function () {
-    expect($this->policy->restore($this->salesUser, $this->deal))->toBeFalse();
+test('non-admin cannot restore deals they did not create', function () {
+    $anotherSalesUser = \App\Models\User::factory()->create();
+    $anotherSalesUser->assignRole('sales');
+    expect($this->policy->restore($anotherSalesUser, $this->deal))->toBeFalse();
+});
+
+test('deal creator can restore their own deal', function () {
+    expect($this->policy->restore($this->salesUser, $this->deal))->toBeTrue();
 });
 
 test('no user can force delete deals', function () {

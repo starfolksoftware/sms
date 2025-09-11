@@ -63,7 +63,8 @@ class DealPolicy
      */
     public function restore(User $user, Deal $deal): bool
     {
-        return $user->hasRole('admin');
+    // Allow admins or the original creator to restore
+    return $user->hasRole('admin') || $deal->created_by === $user->id;
     }
 
     /**
