@@ -66,13 +66,13 @@ All these additional features are aimed at **managing Starfolk’s operations mo
 
 ### Non-Functional Requirements
 
-* **Tech Stack:** The application will be built with **Laravel** (PHP) on the backend and **Vue.js** on the frontend, using the Laravel \+ Vue Starter Kit as a foundation. This gives a modern SPA experience via Inertia.js, leveraging Laravel’s robustness for APIs and business logic with Vue’s reactive UI. The UI will use a clean, responsive design (the starter kit includes Tailwind CSS which we will utilize for a consistent look-and-feel).
+ * **Tech Stack:** The application will be built with **Laravel** (PHP) on the backend and **Filament v4** for the server-driven UI. Filament provides a modern, responsive, and interactive admin experience, leveraging Laravel’s robustness for APIs and business logic. The UI will use a clean, responsive design with **Tailwind CSS** for a consistent look-and-feel.
 
 * **Database:** **MySQL** will be used to store application data (contacts, deals, tasks, etc.). We'll design a relational schema optimizing for the described features (with proper indexing for search and retrieval). Given the user count (1-10) and moderate data volumes (likely thousands of contacts at most and similar scale for tasks, etc.), MySQL will easily handle the load.
 
 * **Security:** All access will be authenticated. We’ll use Laravel’s security features (hashed passwords, auth tokens) and implement role-based access control for endpoints and UI components. Sensitive integrations (API keys for social media, email SMTP credentials, AI API keys) will be stored securely (in .env config and not exposed to the client). The web app will be served over HTTPS to protect data in transit. We will also log user activities (audit log) for important actions like data export or deletion.
 
-* **Performance:** As an internal tool, performance needs are modest, but we will ensure efficient queries and use caching for expensive operations (e.g. caching API responses for the dashboard on a hourly basis to avoid hitting rate limits or slowing the UI). The app should load quickly and be responsive on modern browsers. Vue’s SPA nature will make interactions smooth after initial load. We aim for page load times under 2 seconds on average.
+ * **Performance:** As an internal tool, performance needs are modest, but we will ensure efficient queries and use caching for expensive operations (e.g. caching API responses for the dashboard on a hourly basis to avoid hitting rate limits or slowing the UI). The app should load quickly and be responsive on modern browsers. Filament’s server-driven UI ensures fast interactions and a smooth user experience. We aim for page load times under 2 seconds on average.
 
 * **Self-Hosted Deployment:** The system will be deployed on Starfolk’s own server or hosting environment (possibly a VPS or cloud instance). We will containerize the app (Docker) or provide clear setup instructions so it can be easily installed and updated by Starfolk’s tech team. Backups of the MySQL database should be scheduled regularly (e.g. daily dumps) to prevent data loss. The system will run as a web application accessible via browser (no mobile app for now, though the responsive design means it can be used on tablets or phones if needed).
 
@@ -170,7 +170,7 @@ Below is a breakdown of the work required to implement the above user stories. T
 
 ### User Management & Roles Tasks
 
-* **Setup Authentication & Starter Kit Integration:** Install and configure the Laravel+Vue starter kit in the project. Verify that basic auth (login, registration, password reset) works. *(Supports Story 1, 36\)*
+ * **Setup Authentication & Filament Integration:** Install and configure Filament v4 in the project. Verify that basic auth (login, registration, password reset) works. *(Supports Story 1, 36\)*
 
 * **Implement Role Model & Permissions:** Add a Role model and a permission system (e.g., using a package like Spatie Laravel Permissions or custom tables). Seed the database with initial roles (Admin, Sales, Marketing, etc.) and permissions (manage\_clients, manage\_tasks, view\_dashboard, etc.). *(Story 1\)*
 
@@ -188,7 +188,7 @@ Below is a breakdown of the work required to implement the above user stories. T
 
 * **Contacts CRUD Backend:** Implement Laravel controllers and services for creating, reading, updating, and deleting contacts. Include validation (e.g. email format, required fields). *(Story 3, 4\)*
 
-* **Contacts CRUD UI:** Build Vue pages for listing all contacts (with search & filter by status), viewing a single contact’s details (and related deals or activities), creating a new contact/lead, and editing a contact. Ensure a smooth UX (possibly modals or separate pages for create/edit). *(Story 3, 4\)*
+ * **Contacts CRUD UI:** Build Filament resources for listing all contacts (with search & filter by status), viewing a single contact’s details (and related deals or activities), creating a new contact/lead, and editing a contact. Ensure a smooth UX (possibly modals or separate pages for create/edit). *(Story 3, 4\)*
 
 * **Lead Status & Conversion Logic:** Add functionality to mark a contact’s status (Lead, Qualified Lead, Customer, etc.). Implement a conversion action – e.g. a button “Convert to Customer” that toggles status and perhaps triggers creation of a related client profile if using separate tables. *(Story 4, 9\)*
 
@@ -208,17 +208,17 @@ Below is a breakdown of the work required to implement the above user stories. T
 
 * **Deals Controller & API:** Implement backend logic for creating deals (likely from a lead’s page or a general “new deal” form), updating deal details (stage changes, marking won/lost, editing fields), and listing deals. Ensure business rules: e.g. if marking as won, auto update contact status; if lost, require a reason note. *(Story 6, 7, 9\)*
 
-* **Deals UI \- Creation:** Provide a form (possibly accessible from a contact’s profile like “Add Deal for this Lead”) to create a new deal. Or a global “Add Deal” with a dropdown to select a contact and product. *(Story 6\)*
+ * **Deals UI \- Creation:** Provide a Filament form (possibly accessible from a contact’s profile like “Add Deal for this Lead”) to create a new deal. Or a global “Add Deal” with a dropdown to select a contact and product. *(Story 6\)*
 
-* **Deals UI \- Pipeline View:** Develop a Kanban board component in Vue that displays deals grouped by stage columns. Users should be able to drag a deal card from one stage to another to update its stage instantly via AJAX. Each card shows key info: deal name, value, client name. *(Story 7\)*
+ * **Deals UI \- Pipeline View:** Develop a Kanban board or table view in Filament that displays deals grouped by stage columns. Users should be able to update a deal’s stage via actions or dropdowns. Each card or row shows key info: deal name, value, client name. *(Story 7\)*
 
-* **Deals UI \- List/Detail:** Alternatively or additionally, provide a table view of deals (filter by stage, owner, product). Clicking a deal shows detail (full info, timeline of changes, associated contact link). *(Story 8\)*
+ * **Deals UI \- List/Detail:** Alternatively or additionally, provide a Filament table view of deals (filter by stage, owner, product). Clicking a deal shows detail (full info, timeline of changes, associated contact link). *(Story 8\)*
 
 * **Deal Stage Configuration:** Seed the system with default stages and allow admin to configure stage names/order (either via a config file or an admin UI for pipeline settings). *(Supports customization)*
 
 * **Deal Won/Lost Flow:** Implement the actions/buttons for marking a deal as **Won** or **Lost**. If Won: set status, maybe prompt to input actual closed value if different, create an entry in contact’s activity (and possibly trigger an email or task for onboarding the new client). If Lost: prompt for reason and record it. These actions should also move the deal to a Closed section of the pipeline. *(Story 9\)*
 
-* **Sales Reports (Basic):** On the pipeline page or a separate “Deals Insights”, calculate summary stats: total open deals count and sum, total won this month, win rate, etc. Display these as small highlights above or below the pipeline. *(Story 8\)*
+ * **Sales Reports (Basic):** On the pipeline page or a separate “Deals Insights”, calculate summary stats: total open deals count and sum, total won this month, win rate, etc. Display these as small highlights above or below the pipeline using Filament widgets. *(Story 8\)*
 
 * **Notification on Deal Events:** If enabled, send a notification or email to relevant users on key events (e.g. a deal marked won could alert finance or the team). This can tie into the webhook config as well for Slack. *(Story 32\)*
 
@@ -228,20 +228,20 @@ Below is a breakdown of the work required to implement the above user stories. T
 
 * **Task CRUD Backend:** Implement endpoints for creating tasks, editing, deleting, and listing. Include business logic like default status \= “Todo” and default assignee \= creator if not specified. Ensure only creator or assignee or managers can edit certain fields (or define rules clearly). *(Story 10, 11, 14\)*
 
-* **Task Creation UI:** Build a form (maybe a modal or separate page) to add a new task. The form should allow selecting an assignee from users, setting due date (date picker), priority (Low/Med/High), and linking to a product or contact if relevant (dropdowns). *(Story 10, 11, 13\)*
+ * **Task Creation UI:** Build a Filament form (possibly modal or separate page) to add a new task. The form should allow selecting an assignee from users, setting due date (date picker), priority (Low/Med/High), and linking to a product or contact if relevant (dropdowns). *(Story 10, 11, 13\)*
 
-* **Task List UI:** Create a page showing tasks. Possibly multiple views:
+ * **Task List UI:** Create Filament resource pages showing tasks. Possibly multiple views:
 
 * *My Tasks:* tasks assigned to the logged-in user, grouped by status or due date.
 
 * *All Tasks or Project Tasks:* if a project or product filter is selected, show tasks for that grouping.
 
 * *Overdue Tasks:* highlight tasks past due in red, etc.  
-  Provide quick actions like marking complete (maybe a checkbox or drag to Done column). *(Story 12, 13\)*
+  Provide quick actions like marking complete (maybe a checkbox or action). *(Story 12, 13\)*
 
-* **Kanban Board UI (Tasks):** Implement a board view for tasks by status (To Do, In Progress, Done). This can be similar to deals board implementation, allowing drag-drop of task cards. Useful for project or team overview. *(Story 12\)*
+ * **Kanban Board UI (Tasks):** Implement a board or grouped table view for tasks by status (To Do, In Progress, Done) using Filament. Useful for project or team overview. *(Story 12\)*
 
-* **Task Detail & Comments:** Provide a detailed view or expandable section for each task to see full description, attached files, comments, and history (created date, completed date). Allow users to add a comment (which tags the task with updated activity). Possibly allow @mentioning other users in comments to notify them. *(Story 14\)*
+ * **Task Detail & Comments:** Provide a detailed view or expandable section for each task to see full description, attached files, comments, and history (created date, completed date) using Filament. Allow users to add a comment (which tags the task with updated activity). Possibly allow @mentioning other users in comments to notify them. *(Story 14\)*
 
 * **File Attachment on Tasks:** Integrate file upload (using Laravel file storage) so users can attach relevant documents or images to a task. Show attached files in task detail. *(Supports Story 14\)*
 
@@ -400,20 +400,19 @@ Below is a breakdown of the work required to implement the above user stories. T
 * From external: ensure social and email metrics are fetched (from tasks above). Possibly store daily snapshots to allow trend graphs.  
   Possibly create a new table for storing daily KPI snapshots or just compute on the fly for recent period.
 
-* **Dashboard UI Layout:** Design a Vue component for the dashboard showing multiple widgets. Likely use a grid of cards:
+ * **Dashboard UI Layout:** Design Filament dashboard pages showing multiple widgets. Likely use a grid of cards:
 
 * Numeric summary cards (with icons) for headline numbers (e.g. “Leads (This Month): 50”, “Deals Won: 10 ($5k)”, “Open Tasks: 8”, “Email Open Rate: 45%”, etc.).
 
-* Charts: Use a charting library (like Chart.js or ApexCharts) to draw graphs for trends. For example: a line chart of leads per week over the last 8 weeks, bar chart of deals by stage, pie chart of lead sources, line chart of website visits if available, etc.  
-  Build components for these charts that accept data via props so we can reuse easily.
+* Charts: Use Filament chart widgets or integrate charting libraries for trends. For example: a line chart of leads per week over the last 8 weeks, bar chart of deals by stage, pie chart of lead sources, line chart of website visits if available, etc.
 
-* **Populate Dashboard Data:** Create a Vuex store or utilize Inertia to load all needed data in one go (to minimize multiple API calls). The controller could gather all KPI data and return in a single payload. Then the frontend assigns each widget the data. *(Story 29\)*
+ * **Populate Dashboard Data:** Use Filament dashboard widgets and backend queries to load all needed data in one go (to minimize multiple API calls). The controller could gather all KPI data and return in a single payload. Then the dashboard assigns each widget the data. *(Story 29\)*
 
-* **Interactivity:** Allow date range selection on the dashboard (a dropdown: Last 7 days, Last 30 days, Custom range). When changed, refetch or recalc the data for that range and update charts. *(Story 30\)*
+ * **Interactivity:** Allow date range selection on the dashboard (a dropdown: Last 7 days, Last 30 days, Custom range). When changed, refetch or recalc the data for that range and update charts using Filament widgets. *(Story 30\)*
 
-* **Drill-down Links:** Make dashboard widgets clickable if relevant – e.g. clicking “50 New Leads” takes user to CRM filtered by leads created this month; clicking a chart segment might filter to those records. Implement these links/filters where practical. *(Story 29\)*
+ * **Drill-down Links:** Make dashboard widgets clickable if relevant – e.g. clicking “50 New Leads” takes user to CRM filtered by leads created this month; clicking a chart segment might filter to those records. Implement these links/filters where practical using Filament actions. *(Story 29\)*
 
-* **Customization Options:** Provide a way for users to customize which widgets they see (this could be simple: e.g., allow hiding certain sections via user settings, or drag-reorder of widgets if ambitious). At minimum, ensure the design is responsive so on smaller screens widgets stack. *(Story 30\)*
+ * **Customization Options:** Provide a way for users to customize which widgets they see (this could be simple: e.g., allow hiding certain sections via user settings, or drag-reorder of widgets if ambitious). At minimum, ensure the design is responsive so on smaller screens widgets stack. *(Story 30\)*
 
 * **Weekly Summary Email:** Implement a scheduled job (Laravel command) that runs weekly (say Monday 8am) to compile key metrics from last week and email them to interested users (maybe all admins or a list in settings). The email could include a few top stats (leads, sales, etc.) and a link to the full dashboard. Provide a setting for users to opt-in to this email. *(Story 31\)*
 
