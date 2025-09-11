@@ -16,6 +16,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'manage_clients',
             'manage_tasks',
             'view_dashboard',
+            'manage_roles',
         ];
 
         foreach ($permissions as $permission) {
@@ -26,7 +27,8 @@ class RolesAndPermissionsSeeder extends Seeder
         $roles = [
             'Admin' => $permissions,
             'Sales' => ['manage_clients', 'view_dashboard'],
-            'Marketing' => ['manage_clients', 'view_dashboard'], // manage_clients for lead handling
+            'Marketing' => ['manage_clients', 'view_dashboard'],
+            'Product' => ['manage_tasks', 'view_dashboard'],
         ];
 
         foreach ($roles as $roleName => $perms) {
