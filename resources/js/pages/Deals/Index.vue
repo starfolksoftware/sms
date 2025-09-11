@@ -60,7 +60,6 @@ interface Props {
     expected_close_from?: string
     expected_close_to?: string
     sort?: string
-    dir?: string
   }
   enums: {
     stages: string[]
@@ -74,6 +73,8 @@ const props = defineProps<Props>()
 const search = ref(props.filters.q || '')
 const selectedStatus = ref(props.filters.status || '')
 const selectedStage = ref(props.filters.stage || '')
+
+// Note: Create/Edit now use standalone pages; dialogs removed.
 
 const columns = [
   {
@@ -178,19 +179,21 @@ const clearFilters = () => {
   selectedStage.value = ''
   applyFilters()
 }
+
+// No delegated click handlers needed; actions use normal links
 </script>
 
 <template>
   <Head title="Deals" />
   
   <AppLayout>
-    <template #header>
+  <template #header>
       <div class="mt-6 flex items-center justify-between w-full px-6 lg:px-8">
         <div>
           <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Deals</h2>
           <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">A list of all deals including their title, contact, amount, stage and status.</p>
         </div>
-        <Button @click="router.visit('/crm/deals/new')">Add Deal</Button>
+  <Button @click="router.visit('/crm/deals/new')">Add Deal</Button>
       </div>
     </template>
 
@@ -272,4 +275,5 @@ const clearFilters = () => {
       </div>
     </div>
   </AppLayout>
+
 </template>
