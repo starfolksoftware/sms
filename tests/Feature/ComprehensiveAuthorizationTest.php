@@ -32,14 +32,14 @@ test('complete authorization system enforces permissions correctly', function ()
 
     // Test 1: Admin can access everything
     $this->actingAs($admin)->get('/contacts')->assertOk();
-    $this->actingAs($admin)->get('/deals')->assertOk();
+    $this->actingAs($admin)->get('/crm/deals')->assertOk();
     $this->actingAs($admin)->get('/tasks')->assertOk();
     $this->actingAs($admin)->get('/products')->assertOk();
     $this->actingAs($admin)->get('/admin')->assertOk();
 
     // Test 2: Sales user can access CRM but not admin/products
     $this->actingAs($salesUser)->get('/contacts')->assertOk();
-    $this->actingAs($salesUser)->get('/deals')->assertOk();
+    $this->actingAs($salesUser)->get('/crm/deals')->assertOk();
     $this->actingAs($salesUser)->get('/tasks')->assertOk();
     $this->actingAs($salesUser)->get('/sales')->assertOk();
     $this->actingAs($salesUser)->get('/admin')->assertForbidden();
@@ -47,7 +47,7 @@ test('complete authorization system enforces permissions correctly', function ()
 
     // Test 3: Marketing user has limited access
     $this->actingAs($marketingUser)->get('/contacts')->assertForbidden();
-    $this->actingAs($marketingUser)->get('/deals')->assertForbidden();
+    $this->actingAs($marketingUser)->get('/crm/deals')->assertForbidden();
     $this->actingAs($marketingUser)->get('/tasks')->assertForbidden();
     $this->actingAs($marketingUser)->get('/products')->assertForbidden();
     $this->actingAs($marketingUser)->get('/admin')->assertForbidden();
@@ -56,7 +56,7 @@ test('complete authorization system enforces permissions correctly', function ()
 
     // Test 4: User without roles cannot access protected resources
     $this->actingAs($noRoleUser)->get('/contacts')->assertForbidden();
-    $this->actingAs($noRoleUser)->get('/deals')->assertForbidden();
+    $this->actingAs($noRoleUser)->get('/crm/deals')->assertForbidden();
     $this->actingAs($noRoleUser)->get('/tasks')->assertForbidden();
     $this->actingAs($noRoleUser)->get('/products')->assertForbidden();
     $this->actingAs($noRoleUser)->get('/admin')->assertForbidden();

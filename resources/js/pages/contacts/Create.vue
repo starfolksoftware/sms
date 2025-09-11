@@ -53,16 +53,16 @@ const sourceOptions = [
 <template>
   <Head title="Create Contact" />
 
-  <AppLayout>
+  <AppLayout :breadcrumbs="[{ title: 'Contacts', href: '/contacts' }, { title: 'New', href: '/contacts/new' }]">
     <template #header>
-      <div>
+      <div class="mt-6 w-full px-6 lg:px-8">
         <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">Create Contact</h2>
         <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Add a new contact to your database.</p>
       </div>
     </template>
 
-    <div class="py-12">
-      <div class="mx-auto max-w-4xl sm:px-6 lg:px-8">
+    <div class="py-12 px-0">
+      <div class="w-full sm:px-6 lg:px-8 max-w-none">
         <Card>
           <CardHeader>
             <CardTitle>Contact Information</CardTitle>

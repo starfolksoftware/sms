@@ -18,6 +18,7 @@ interface User {
 interface Deal {
   id: number
   title: string
+  amount?: string | null
   value: string
   status: string
   expected_close_date: string | null
@@ -179,6 +180,12 @@ function performDelete() {
             Edit
           </Button>
           <Button
+            variant="outline"
+            @click="router.visit(`/crm/deals/new?contact_id=${contact.id}`)"
+          >
+            Add Deal
+          </Button>
+          <Button
             v-if="canDeleteContact"
             variant="destructive"
             @click="openDeleteDialog"
@@ -326,13 +333,13 @@ function performDelete() {
                 <div>
                   <h4 class="font-medium">{{ deal.title }}</h4>
                   <p class="text-sm text-gray-500 dark:text-gray-400">
-                    Value: ${{ deal.value }} • Status: {{ deal.status }}
+                    Amount: ${{ deal.amount ?? deal.value }} • Status: {{ deal.status }}
                   </p>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
-                  @click="router.visit(`/deals/${deal.id}`)"
+                  @click="router.visit(`/crm/deals/${deal.id}`)"
                 >
                   View
                 </Button>
