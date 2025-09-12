@@ -7,6 +7,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -31,7 +32,8 @@ class UsersTable
                     ->label('Roles')
                     ->formatStateUsing(fn($state) => is_array($state) ? implode(', ', $state) : $state)
                     ->badge(),
-                BadgeColumn::make('status')
+                TextColumn::make('status')
+                    ->badge()
                     ->colors([
                         'warning' => 'pending',
                         'danger' => 'deactivated',
@@ -68,36 +70,47 @@ class UsersTable
             ])
             ->recordActions([
                 ViewAction::make(),
-                EditAction::make(),
-                Action::make('assignRoles')
-                    ->label('Assign Roles')
-                    ->visible(fn($record) => Gate::allows('manage_roles'))
-                    ->form([
-                        \Filament\Forms\Components\Select::make('roles')
-                            ->multiple()
-                            ->relationship('roles','name')
-                            ->preload()
-                            ->searchable(),
-                    ])
-                    ->action(function($record, $data){
-                        $record->syncRoles($data['roles'] ?? []);
-                    })
-                    ->successNotificationTitle('Roles updated'),
-                Action::make('deactivate')
-                    ->visible(fn($record) => $record->status === 'active')
-                    ->requiresConfirmation()
-                    ->color('danger')
-                    ->action(fn($record) => $record->update(['status' => 'deactivated']))
-                    ->successNotificationTitle('User deactivated'),
-                Action::make('reactivate')
-                    ->visible(fn($record) => $record->status === 'deactivated')
-                    ->color('success')
-                    ->action(fn($record) => $record->update(['status' => 'active']))
-                    ->successNotificationTitle('User reactivated'),
-                Action::make('resendInvite')
-                    ->visible(fn($record) => $record->status === 'pending' && $record->invite_token)
-                    ->action(function($record){ /* queue mail resend */ })
-                    ->successNotificationTitle('Invite resent'),
+                ActionGroup::make([
+                    EditAction::make(),
+                    Action::make('assignRoles')
+                        ->label('Assign Roles')
+                        ->icon('heroicon-o-shield-check')
+                        ->visible(fn($record) => Gate::allows('manage_roles'))
+                        ->schema([
+                            \Filament\Forms\Components\Select::make('roles')
+                                ->multiple()
+                                ->options(fn() => Role::pluck('name', 'name'))
+                                ->preload()
+                                ->searchable(),
+                        ])
+                        ->mountUsing(function ($form, $record) {
+                            $form->fill([
+                                'roles' => $record->roles->pluck('name')->toArray(),
+                            ]);
+                        })
+                        ->action(function(array $data, $record): void {
+                            $record->syncRoles($data['roles'] ?? []);
+                        })
+                        ->successNotificationTitle('Roles updated'),
+                    Action::make('deactivate')
+                        ->icon('heroicon-o-user-minus')
+                        ->visible(fn($record) => $record->status === 'active')
+                        ->requiresConfirmation()
+                        ->color('danger')
+                        ->action(fn($record) => $record->update(['status' => 'deactivated']))
+                        ->successNotificationTitle('User deactivated'),
+                    Action::make('reactivate')
+                        ->icon('heroicon-o-user-check')
+                        ->visible(fn($record) => $record->status === 'deactivated')
+                        ->color('success')
+                        ->action(fn($record) => $record->update(['status' => 'active']))
+                        ->successNotificationTitle('User reactivated'),
+                    Action::make('resendInvite')
+                        ->icon('heroicon-o-envelope-open')
+                        ->visible(fn($record) => $record->status === 'pending' && $record->invite_token)
+                        ->action(function($record){ /* queue mail resend */ })
+                        ->successNotificationTitle('Invite resent'),
+                ]),
             ])
             ->headerActions([
                 Action::make('inviteUser')
