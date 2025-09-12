@@ -56,8 +56,7 @@ class DealResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
-            ->modifyQueryUsing(fn (Builder $q) => $q->with(['contact','owner','product']))
+    return $table
             ->columns([
                 TextColumn::make('title')->searchable()->sortable()->weight('bold'),
                 TextColumn::make('contact.name')->label('Contact')->sortable()->searchable(),
@@ -70,26 +69,22 @@ class DealResource extends Resource
                 TextColumn::make('created_at')->dateTime()->sortable(),
             ])
             ->filters([
+                // Temporarily simplified filters to isolate null model issue.
                 SelectFilter::make('stage')->options([
                     'new'=>'New','qualified'=>'Qualified','proposal'=>'Proposal','negotiation'=>'Negotiation','closed'=>'Closed'
                 ]),
                 SelectFilter::make('status')->options([
                     'open'=>'Open','won'=>'Won','lost'=>'Lost'
                 ]),
-                SelectFilter::make('owner_id')->relationship('owner','name')->searchable(),
-                SelectFilter::make('contact_id')->relationship('contact','name')->searchable(),
-                Filter::make('expected_close_between')
-                    ->form([
-                        Forms\Components\DatePicker::make('from'),
-                        Forms\Components\DatePicker::make('to'),
-                    ])->query(fn (Builder $q, array $d) =>
-                        $q->when($d['from'] ?? null, fn($qq,$v)=>$qq->whereDate('expected_close_date','>=',$v))
-                          ->when($d['to'] ?? null, fn($qq,$v)=>$qq->whereDate('expected_close_date','<=',$v))
-                    ),
-                TrashedFilter::make(),
             ])
-            ->defaultSort('created_at','desc')
-            ->persistFiltersInSession();
+            ->defaultSort('created_at','desc');
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        // Ensure a proper Eloquent builder with the model instance is always returned
+        // and eager load commonly used relations to prevent N+1 issues.
+        return Deal::query()->with(['contact','owner','product']);
     }
 
     public static function getRelations(): array

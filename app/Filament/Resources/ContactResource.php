@@ -68,8 +68,7 @@ class ContactResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
-            ->modifyQueryUsing(fn (Builder $q) => $q->with('owner'))
+    return $table
             ->columns([
                 TextColumn::make('name')->searchable()->sortable()->weight('bold'),
                 TextColumn::make('email')->searchable()->icon('heroicon-m-envelope'),
@@ -93,11 +92,8 @@ class ContactResource extends Resource
                     'website_form'=>'Website form','meta_ads'=>'Meta ads','x'=>'X','instagram'=>'Instagram',
                     'referral'=>'Referral','manual'=>'Manual','other'=>'Other',
                 ]),
-        SelectFilter::make('owner_id')->relationship('owner','name')->searchable(),
-                TrashedFilter::make(),
             ])
-            ->defaultSort('created_at', 'desc')
-            ->persistFiltersInSession();
+            ->defaultSort('created_at', 'desc');
     }
 
     public static function getRelations(): array
@@ -118,5 +114,10 @@ class ContactResource extends Resource
     public static function getGloballySearchableAttributes(): array
     {
         return ['name','email','company','phone'];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return Contact::query()->with('owner');
     }
 }
