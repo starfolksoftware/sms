@@ -47,7 +47,15 @@ class PolicyAuthorizationTest extends TestCase
 
         $this->assertTrue($admin->can('create', Contact::class));
         $this->assertTrue($admin->can('create', Task::class));
-        $deal = Deal::create(['title' => 'X', 'value' => 10]);
+        $contact = Contact::factory()->create();
+        $deal = Deal::create([
+            'title' => 'X',
+            'contact_id' => $contact->id,
+            'amount' => 10,
+            'currency' => 'USD',
+            'stage' => 'new',
+            'status' => 'open',
+        ]);
         $this->assertTrue($admin->can('update', $deal));
     }
 }

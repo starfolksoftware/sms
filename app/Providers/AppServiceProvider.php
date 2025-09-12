@@ -20,5 +20,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
     \App\Models\Contact::observe(\App\Observers\ContactObserver::class);
+    \App\Models\Deal::observe(\App\Observers\DealObserver::class);
     }
 }

@@ -102,7 +102,7 @@ class ContactResource extends Resource
 
     public static function getRelations(): array
     {
-    return [];
+    return [\App\Filament\Resources\ContactResource\RelationManagers\DealsRelationManager::class];
     }
 
     public static function getPages(): array

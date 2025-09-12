@@ -13,12 +13,15 @@ class DealPolicy
         return null;
     }
 
-    public function viewAny(User $user): bool { return $user->can('manage_clients') || $user->can('view_dashboard'); }
-    public function view(User $user, Deal $deal): bool { return $this->viewAny($user); }
-    public function create(User $user): bool { return $user->can('manage_clients'); }
-    public function update(User $user, Deal $deal): bool { return $user->can('manage_clients') && ($deal->owner_id === null || $deal->owner_id === $user->id); }
-    public function delete(User $user, Deal $deal): bool { return $user->can('manage_clients'); }
-    public function restore(User $user, Deal $deal): bool { return false; }
+    public function viewAny(User $user): bool { return $user->can('view_deals'); }
+    public function view(User $user, Deal $deal): bool { return $user->can('view_deals'); }
+    public function create(User $user): bool { return $user->can('manage_deals'); }
+    public function update(User $user, Deal $deal): bool { return $user->can('manage_deals'); }
+    public function delete(User $user, Deal $deal): bool { return $user->can('manage_deals'); }
+    public function restore(User $user, Deal $deal): bool { return $user->can('manage_deals'); }
     public function forceDelete(User $user, Deal $deal): bool { return false; }
-    public function markWon(User $user, Deal $deal): bool { return $this->update($user, $deal); }
+
+    public function changeStage(User $user, Deal $deal): bool { return $user->can('manage_deals') && ! in_array($deal->status, ['won','lost']); }
+    public function win(User $user, Deal $deal): bool { return $user->can('manage_deals') && $deal->status === 'open'; }
+    public function lose(User $user, Deal $deal): bool { return $user->can('manage_deals') && $deal->status === 'open'; }
 }
