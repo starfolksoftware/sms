@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -76,7 +77,7 @@ class Deal extends Model
 
         activity('deal.won')
             ->performedOn($this)
-            ->causedBy(auth()->user())
+            ->causedBy(Auth::user())
             ->withProperties([
                 'won_amount' => $this->won_amount,
                 'currency' => $this->currency,
@@ -100,7 +101,7 @@ class Deal extends Model
 
         activity('deal.lost')
             ->performedOn($this)
-            ->causedBy(auth()->user())
+            ->causedBy(Auth::user())
             ->withProperties([
                 'lost_reason' => $reason,
                 'previous_status' => $previousStatus,

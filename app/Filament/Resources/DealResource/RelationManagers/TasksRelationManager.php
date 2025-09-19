@@ -17,6 +17,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class TasksRelationManager extends RelationManager
 {
@@ -84,8 +85,8 @@ class TasksRelationManager extends RelationManager
             ])
             ->headerActions([
                 CreateAction::make()
-                    ->mutateFormDataUsing(function (array $data): array {
-                        $data['creator_id'] = auth()->id();
+                    ->mutateDataUsing(function (array $data): array {
+                        $data['creator_id'] = Auth::id();
 
                         return $data;
                     }),
