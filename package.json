@@ -3,8 +3,10 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
-        "dev": "vite"
+          "build": "vite build",
+          "dev": "vite",
+          "serve": "php artisan serve --host=0.0.0.0 --port=8000",
+          "dev:full": "concurrently -k -n APP,VITE -c blue,magenta \"npm:serve\" \"npm:dev\""
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",
