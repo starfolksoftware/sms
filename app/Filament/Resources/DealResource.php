@@ -9,12 +9,15 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 // for Actions & Filters namespace usage
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class DealResource extends Resource
 {
@@ -92,6 +95,56 @@ class DealResource extends Resource
                 SelectFilter::make('status')->options([
                     'open' => 'Open', 'won' => 'Won', 'lost' => 'Lost',
                 ]),
+            ])
+            ->actions([
+                ActionGroup::make([
+                    Action::make('mark_won')
+                        ->label('Mark Won')
+                        ->icon('heroicon-o-trophy')
+                        ->color('success')
+                        ->visible(fn ($record) => $record->status === 'open' && Gate::allows('win', $record))
+                        ->form([
+                            Forms\Components\TextInput::make('won_amount')
+                                ->label('Won Amount')
+                                ->numeric()
+                                ->minValue(0)
+                                ->default(fn ($record) => $record->amount)
+                                ->helperText('Leave empty to use the original deal amount')
+                                ->prefix(fn ($record) => $record->currency),
+                        ])
+                        ->action(function ($record, array $data) {
+                            $record->markAsWon($data['won_amount'] ?? null);
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Deal marked as won')
+                                ->success()
+                                ->send();
+                        }),
+
+                    Action::make('mark_lost')
+                        ->label('Mark Lost')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->visible(fn ($record) => $record->status === 'open' && Gate::allows('lose', $record))
+                        ->form([
+                            Forms\Components\Textarea::make('lost_reason')
+                                ->label('Reason for Loss')
+                                ->required()
+                                ->minLength(5)
+                                ->rows(3)
+                                ->placeholder('Please provide a reason why this deal was lost...'),
+                        ])
+                        ->action(function ($record, array $data) {
+                            $record->markAsLost($data['lost_reason']);
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Deal marked as lost')
+                                ->body("Reason: {$data['lost_reason']}")
+                                ->warning()
+                                ->send();
+                        }),
+                ])
+                    ->visible(fn ($record) => $record->status === 'open'),
             ])
             ->defaultSort('created_at', 'desc');
     }
