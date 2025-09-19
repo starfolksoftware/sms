@@ -31,7 +31,7 @@ class DealCreatedNotification extends Notification implements ShouldQueue
             ->line("Contact: {$this->deal->contact->name}")
             ->line('Amount: '.number_format($this->deal->amount, 2).' '.$this->deal->currency)
             ->line("Stage: {$this->deal->stage}")
-            ->line("Owner: {$this->deal->owner?->name ?? 'Unassigned'}")
+            ->line("Owner: " . ($this->deal->owner?->name ?? 'Unassigned'))
             ->action('View Deal', $url)
             ->line('Stay on top of your pipeline!');
     }

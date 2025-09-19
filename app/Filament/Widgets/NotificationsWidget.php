@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Auth;
 
 class NotificationsWidget extends Widget
 {
-    protected static string $view = 'filament.widgets.notifications-widget';
+    protected string $view = 'filament.widgets.notifications-widget';
 
     protected int | string | array $columnSpan = 'full';
 
