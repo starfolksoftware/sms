@@ -16,6 +16,60 @@ class ViewDeal extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('edit')
+                ->label('Edit Deal')
+                ->icon('heroicon-m-pencil-square')
+                ->url(fn (): string => static::getResource()::getUrl('edit', ['record' => $this->record]))
+                ->visible(fn (): bool => Gate::allows('update', $this->record)),
+
+            Action::make('assign_owner')
+                ->label('Assign Owner')
+                ->icon('heroicon-m-user-plus')
+                ->color('warning')
+                ->visible(fn (): bool => Gate::allows('update', $this->record))
+                ->form([
+                    Forms\Components\Select::make('owner_id')
+                        ->label('Owner')
+                        ->relationship('owner', 'name')
+                        ->searchable()
+                        ->preload()
+                        ->default(fn () => $this->record->owner_id),
+                ])
+                ->action(function (array $data): void {
+                    $this->record->update(['owner_id' => $data['owner_id']]);
+                    Notification::make()
+                        ->title('Owner assigned successfully')
+                        ->success()
+                        ->send();
+                    $this->refreshFormData(['owner_id']);
+                }),
+
+            Action::make('change_stage')
+                ->label('Change Stage')
+                ->icon('heroicon-m-arrow-right')
+                ->color('info')
+                ->visible(fn (): bool => Gate::allows('changeStage', $this->record))
+                ->form([
+                    Forms\Components\Select::make('stage')
+                        ->options([
+                            'new' => 'New',
+                            'qualified' => 'Qualified',
+                            'proposal' => 'Proposal',
+                            'negotiation' => 'Negotiation',
+                            'closed' => 'Closed',
+                        ])
+                        ->default(fn () => $this->record->stage)
+                        ->required(),
+                ])
+                ->action(function (array $data): void {
+                    $this->record->update(['stage' => $data['stage']]);
+                    Notification::make()
+                        ->title('Stage changed successfully')
+                        ->success()
+                        ->send();
+                    $this->refreshFormData(['stage']);
+                }),
+
             Action::make('mark_won')
                 ->label('Mark Won')
                 ->icon('heroicon-o-trophy')
