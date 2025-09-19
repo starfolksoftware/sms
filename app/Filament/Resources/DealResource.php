@@ -47,9 +47,14 @@ class DealResource extends Resource
                         \Filament\Schemas\Components\Grid::make(12)->schema([
                             Forms\Components\TextInput::make('amount')->numeric()->minValue(0)->columnSpan(4),
                             Forms\Components\TextInput::make('currency')->maxLength(3)->default('USD')->required()->columnSpan(2),
-                            Forms\Components\Select::make('stage')->options([
-                                'new' => 'New', 'qualified' => 'Qualified', 'proposal' => 'Proposal', 'negotiation' => 'Negotiation', 'closed' => 'Closed',
-                            ])->default('new')->required()->columnSpan(3),
+                            Forms\Components\Select::make('deal_stage_id')
+                                ->label('Stage')
+                                ->relationship('dealStage', 'name')
+                                ->options(fn () => \App\Models\DealStage::active()->ordered()->pluck('name', 'id'))
+                                ->searchable()
+                                ->preload()
+                                ->required()
+                                ->columnSpan(3),
                             Forms\Components\Select::make('status')->options([
                                 'open' => 'Open', 'won' => 'Won', 'lost' => 'Lost',
                             ])->default('open')->disabled(fn ($livewire) => $livewire instanceof Pages\CreateDeal)->columnSpan(3),
@@ -98,15 +103,18 @@ class DealResource extends Resource
                     ->label('Amount')
                     ->money(fn (Deal $record): string => $record->currency ?? 'USD')
                     ->sortable(),
-                BadgeColumn::make('stage')
-                    ->formatStateUsing(fn (string $state): string => ucfirst($state))
+                BadgeColumn::make('dealStage.name')
+                    ->label('Stage')
+                    ->formatStateUsing(fn (string $state): string => $state)
                     ->colors([
-                        'secondary' => 'new',
-                        'warning' => 'qualified',
-                        'primary' => 'proposal',
-                        'success' => 'negotiation',
-                        'danger' => 'closed',
-                    ]),
+                        'secondary' => fn (Deal $record) => $record->dealStage?->slug === 'lead-in',
+                        'warning' => fn (Deal $record) => $record->dealStage?->slug === 'qualified',
+                        'primary' => fn (Deal $record) => $record->dealStage?->slug === 'proposal-sent',
+                        'info' => fn (Deal $record) => $record->dealStage?->slug === 'negotiation',
+                        'success' => fn (Deal $record) => $record->dealStage?->is_winning_stage,
+                        'danger' => fn (Deal $record) => $record->dealStage?->is_losing_stage,
+                    ])
+                    ->sortable(),
                 BadgeColumn::make('status')
                     ->formatStateUsing(fn (string $state): string => ucfirst($state))
                     ->colors([
@@ -146,14 +154,12 @@ class DealResource extends Resource
                         'lost' => 'Lost',
                     ])
                     ->multiple(),
-                SelectFilter::make('stage')
-                    ->options([
-                        'new' => 'New',
-                        'qualified' => 'Qualified',
-                        'proposal' => 'Proposal',
-                        'negotiation' => 'Negotiation',
-                        'closed' => 'Closed',
-                    ])
+                SelectFilter::make('deal_stage_id')
+                    ->label('Stage')
+                    ->relationship('dealStage', 'name')
+                    ->options(fn () => \App\Models\DealStage::active()->ordered()->pluck('name', 'id'))
+                    ->searchable()
+                    ->preload()
                     ->multiple(),
                 SelectFilter::make('owner_id')
                     ->relationship('owner', 'name')
@@ -249,18 +255,21 @@ class DealResource extends Resource
                         ->color('info')
                         ->visible(fn (Deal $record): bool => Gate::allows('changeStage', $record))
                         ->form([
-                            Forms\Components\Select::make('stage')
-                                ->options([
-                                    'new' => 'New',
-                                    'qualified' => 'Qualified',
-                                    'proposal' => 'Proposal',
-                                    'negotiation' => 'Negotiation',
-                                    'closed' => 'Closed',
-                                ])
+                            Forms\Components\Select::make('deal_stage_id')
+                                ->label('Stage')
+                                ->options(fn () => \App\Models\DealStage::active()->ordered()->pluck('name', 'id'))
+                                ->searchable()
+                                ->preload()
                                 ->required(),
                         ])
                         ->action(function (Deal $record, array $data): void {
-                            $record->update(['stage' => $data['stage']]);
+                            $oldStage = $record->dealStage?->name ?? 'Unknown';
+                            $record->update(['deal_stage_id' => $data['deal_stage_id']]);
+                            $newStage = $record->fresh()->dealStage?->name ?? 'Unknown';
+
+                            // Dispatch stage changed event
+                            \App\Events\DealStageChanged::dispatch($record, $oldStage, $newStage);
+
                             \Filament\Notifications\Notification::make()
                                 ->title('Stage changed successfully')
                                 ->success()
@@ -343,15 +352,17 @@ class DealResource extends Resource
                                 ->color('primary'),
                         ]),
                         \Filament\Schemas\Components\Grid::make(4)->schema([
-                            TextEntry::make('stage')
+                            TextEntry::make('dealStage.name')
+                                ->label('Stage')
                                 ->badge()
-                                ->formatStateUsing(fn (string $state): string => ucfirst($state))
+                                ->formatStateUsing(fn (string $state): string => $state)
                                 ->colors([
-                                    'secondary' => 'new',
-                                    'warning' => 'qualified',
-                                    'primary' => 'proposal',
-                                    'success' => 'negotiation',
-                                    'danger' => 'closed',
+                                    'secondary' => fn (Deal $record) => $record->dealStage?->slug === 'lead-in',
+                                    'warning' => fn (Deal $record) => $record->dealStage?->slug === 'qualified',
+                                    'primary' => fn (Deal $record) => $record->dealStage?->slug === 'proposal-sent',
+                                    'info' => fn (Deal $record) => $record->dealStage?->slug === 'negotiation',
+                                    'success' => fn (Deal $record) => $record->dealStage?->is_winning_stage,
+                                    'danger' => fn (Deal $record) => $record->dealStage?->is_losing_stage,
                                 ]),
                             TextEntry::make('status')
                                 ->badge()
