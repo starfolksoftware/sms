@@ -19,7 +19,18 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-    \App\Models\Contact::observe(\App\Observers\ContactObserver::class);
-    \App\Models\Deal::observe(\App\Observers\DealObserver::class);
+        \App\Models\Contact::observe(\App\Observers\ContactObserver::class);
+        \App\Models\Deal::observe(\App\Observers\DealObserver::class);
+
+        // Register event listeners
+        \Illuminate\Support\Facades\Event::listen(
+            \App\Events\DealWon::class,
+            \App\Listeners\SendDealWonNotifications::class,
+        );
+
+        \Illuminate\Support\Facades\Event::listen(
+            \App\Events\DealLost::class,
+            \App\Listeners\SendDealLostNotifications::class,
+        );
     }
 }
