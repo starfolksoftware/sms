@@ -18,7 +18,7 @@ class DealObserver
         event(new DealUpdated($deal));
 
         // Check if stage changed
-        if ($deal->isDirty('stage')) {
+        if ($deal->wasChanged('stage')) {
             $originalStage = $deal->getOriginal('stage');
             $newStage = $deal->stage;
             
@@ -28,7 +28,7 @@ class DealObserver
         }
 
         // Check if owner changed
-        if ($deal->isDirty('owner_id')) {
+        if ($deal->wasChanged('owner_id')) {
             $oldOwnerId = $deal->getOriginal('owner_id');
             $newOwnerId = $deal->owner_id;
             

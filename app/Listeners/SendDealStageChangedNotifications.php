@@ -3,8 +3,8 @@
 namespace App\Listeners;
 
 use App\Events\DealStageChanged;
-use App\Models\User;
 use App\Notifications\DealStageChangedNotification;
+use App\Services\DealNotificationService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Notification;
@@ -13,21 +13,22 @@ class SendDealStageChangedNotifications implements ShouldQueue
 {
     use InteractsWithQueue;
 
+    public function __construct(
+        private DealNotificationService $notificationService
+    ) {}
+
     public function handle(DealStageChanged $event): void
     {
         $deal = $event->deal;
 
-        // Get users to notify: deal owner and prior owner (if reassigned within 24h) and watchers
-        $usersToNotify = collect();
+        // Get users to notify using the notification service
+        $usersToNotify = $this->notificationService->getUsersForDealStageChanged($deal);
 
-        // Add deal owner if exists
-        if ($deal->owner) {
-            $usersToNotify->push($deal->owner);
-        }
-
-        // Add users with 'manage_deals' permission (sales managers) for stage changes
-        $salesManagers = User::permission('manage_deals')->get();
-        $usersToNotify = $usersToNotify->merge($salesManagers)->unique('id');
+        // Filter users based on their preferences
+        $usersToNotify = $this->notificationService->filterUsersByPreferences(
+            $usersToNotify, 
+            'deal_stage_changed'
+        );
 
         // Send notifications
         if ($usersToNotify->isNotEmpty()) {

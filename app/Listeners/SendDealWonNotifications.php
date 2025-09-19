@@ -3,8 +3,8 @@
 namespace App\Listeners;
 
 use App\Events\DealWon;
-use App\Models\User;
 use App\Notifications\DealWonNotification;
+use App\Services\DealNotificationService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Notification;
@@ -13,23 +13,26 @@ class SendDealWonNotifications implements ShouldQueue
 {
     use InteractsWithQueue;
 
+    public function __construct(
+        private DealNotificationService $notificationService
+    ) {}
+
     public function handle(DealWon $event): void
     {
         $deal = $event->deal;
 
-        // Get users to notify: deal owner and users with sales manager role
-        $usersToNotify = collect();
+        // Get users to notify using the notification service
+        $usersToNotify = $this->notificationService->getUsersForDealWon($deal);
 
-        // Add deal owner if exists
-        if ($deal->owner) {
-            $usersToNotify->push($deal->owner);
-        }
-
-        // Add users with 'manage_deals' permission (sales managers)
-        $salesManagers = User::permission('manage_deals')->get();
-        $usersToNotify = $usersToNotify->merge($salesManagers)->unique('id');
+        // Filter users based on their preferences
+        $usersToNotify = $this->notificationService->filterUsersByPreferences(
+            $usersToNotify, 
+            'deal_won'
+        );
 
         // Send notifications
-        Notification::send($usersToNotify, new DealWonNotification($deal));
+        if ($usersToNotify->isNotEmpty()) {
+            Notification::send($usersToNotify, new DealWonNotification($deal));
+        }
     }
 }

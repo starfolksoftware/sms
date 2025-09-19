@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Events\DealAssigned;
 use App\Notifications\DealAssignedNotification;
+use App\Services\DealNotificationService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Notification;
@@ -12,22 +13,24 @@ class SendDealAssignedNotifications implements ShouldQueue
 {
     use InteractsWithQueue;
 
+    public function __construct(
+        private DealNotificationService $notificationService
+    ) {}
+
     public function handle(DealAssigned $event): void
     {
         $deal = $event->deal;
         $oldOwner = $event->oldOwner;
         $newOwner = $event->newOwner;
 
-        // Get users to notify: new owner and old owner
-        $usersToNotify = collect();
+        // Get users to notify using the notification service
+        $usersToNotify = $this->notificationService->getUsersForDealAssigned($deal, $oldOwner, $newOwner);
 
-        // Add new owner
-        $usersToNotify->push($newOwner);
-
-        // Add old owner if exists and is different from new owner
-        if ($oldOwner && $oldOwner->id !== $newOwner->id) {
-            $usersToNotify->push($oldOwner);
-        }
+        // Filter users based on their preferences
+        $usersToNotify = $this->notificationService->filterUsersByPreferences(
+            $usersToNotify, 
+            'deal_assigned'
+        );
 
         // Send notifications
         if ($usersToNotify->isNotEmpty()) {
