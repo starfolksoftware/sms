@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -10,14 +11,15 @@ use Filament\Forms\Form;
 use Filament\Pages\Page;
 use Filament\Support\Facades\FilamentIcon;
 use Illuminate\Support\Facades\Gate;
+use UnitEnum;
 
 class NotificationSettings extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-bell';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-bell';
 
-    protected static string $view = 'filament.pages.notification-settings';
+    protected string $view = 'filament.pages.notification-settings';
 
-    protected static ?string $navigationGroup = 'Settings';
+    protected static string|UnitEnum|null $navigationGroup = 'Settings';
 
     protected static ?string $title = 'Notification Settings';
 
