@@ -4,18 +4,21 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\DealResource\Pages;
 use App\Models\Deal;
-use Filament\Forms;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
-// for Actions & Filters namespace usage
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Forms;
+use Filament\Infolists\Components\TextEntry;
+// for Actions & Filters namespace usage
+use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
@@ -81,51 +84,214 @@ class DealResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('title')->searchable()->sortable()->weight('bold'),
-                TextColumn::make('contact.name')->label('Contact')->sortable()->searchable(),
-                BadgeColumn::make('stage'),
-                BadgeColumn::make('status'),
-                TextColumn::make('amount')->numeric(2)->label('Amount')->sortable(),
-                TextColumn::make('expected_close_date')->date()->sortable()->label('Expected Close'),
+                TextColumn::make('title')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('bold')
+                    ->description(fn (Deal $record): string => $record->contact?->name ?? 'No Contact'),
+                TextColumn::make('contact.name')
+                    ->label('Contact')
+                    ->sortable()
+                    ->searchable()
+                    ->toggleable(),
+                TextColumn::make('amount')
+                    ->label('Amount')
+                    ->money(fn (Deal $record): string => $record->currency ?? 'USD')
+                    ->sortable(),
+                BadgeColumn::make('stage')
+                    ->formatStateUsing(fn (string $state): string => ucfirst($state))
+                    ->colors([
+                        'secondary' => 'new',
+                        'warning' => 'qualified',
+                        'primary' => 'proposal',
+                        'success' => 'negotiation',
+                        'danger' => 'closed',
+                    ]),
+                BadgeColumn::make('status')
+                    ->formatStateUsing(fn (string $state): string => ucfirst($state))
+                    ->colors([
+                        'primary' => 'open',
+                        'success' => 'won',
+                        'danger' => 'lost',
+                    ]),
+                TextColumn::make('owner.name')
+                    ->label('Owner')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('product.name')
+                    ->label('Product')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('expected_close_date')
+                    ->date()
+                    ->sortable()
+                    ->label('Expected Close')
+                    ->toggleable(),
+                TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->label('Created')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('updated_at')
+                    ->since()
+                    ->sortable()
+                    ->label('Updated')
+                    ->toggleable(),
             ])
             ->filters([
-                SelectFilter::make('stage')->options([
-                    'new' => 'New', 'qualified' => 'Qualified', 'proposal' => 'Proposal', 'negotiation' => 'Negotiation', 'closed' => 'Closed',
-                ]),
-                SelectFilter::make('status')->options([
-                    'open' => 'Open', 'won' => 'Won', 'lost' => 'Lost',
-                ]),
+                SelectFilter::make('status')
+                    ->options([
+                        'open' => 'Open',
+                        'won' => 'Won',
+                        'lost' => 'Lost',
+                    ])
+                    ->multiple(),
+                SelectFilter::make('stage')
+                    ->options([
+                        'new' => 'New',
+                        'qualified' => 'Qualified',
+                        'proposal' => 'Proposal',
+                        'negotiation' => 'Negotiation',
+                        'closed' => 'Closed',
+                    ])
+                    ->multiple(),
+                SelectFilter::make('owner_id')
+                    ->relationship('owner', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->multiple(),
+                SelectFilter::make('product_id')
+                    ->relationship('product', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->multiple(),
+                SelectFilter::make('source')
+                    ->options([
+                        'website_form' => 'Website Form',
+                        'meta_ads' => 'Meta Ads',
+                        'x' => 'X',
+                        'instagram' => 'Instagram',
+                        'referral' => 'Referral',
+                        'manual' => 'Manual',
+                        'other' => 'Other',
+                    ])
+                    ->multiple(),
+                Filter::make('created_at')
+                    ->form([
+                        Forms\Components\DatePicker::make('created_from')
+                            ->label('Created From'),
+                        Forms\Components\DatePicker::make('created_until')
+                            ->label('Created Until'),
+                    ])
+                    ->query(function (EloquentBuilder $query, array $data): EloquentBuilder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn (EloquentBuilder $query, $date): EloquentBuilder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn (EloquentBuilder $query, $date): EloquentBuilder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    }),
+                Filter::make('expected_close_date')
+                    ->form([
+                        Forms\Components\DatePicker::make('close_from')
+                            ->label('Expected Close From'),
+                        Forms\Components\DatePicker::make('close_until')
+                            ->label('Expected Close Until'),
+                    ])
+                    ->query(function (EloquentBuilder $query, array $data): EloquentBuilder {
+                        return $query
+                            ->when(
+                                $data['close_from'],
+                                fn (EloquentBuilder $query, $date): EloquentBuilder => $query->whereDate('expected_close_date', '>=', $date),
+                            )
+                            ->when(
+                                $data['close_until'],
+                                fn (EloquentBuilder $query, $date): EloquentBuilder => $query->whereDate('expected_close_date', '<=', $date),
+                            );
+                    }),
+                TrashedFilter::make(),
             ])
             ->actions([
                 ActionGroup::make([
+                    Action::make('view')
+                        ->url(fn (Deal $record): string => static::getUrl('view', ['record' => $record]))
+                        ->icon('heroicon-m-eye'),
+                    Action::make('edit')
+                        ->url(fn (Deal $record): string => static::getUrl('edit', ['record' => $record]))
+                        ->icon('heroicon-m-pencil-square')
+                        ->visible(fn (Deal $record): bool => Gate::allows('update', $record)),
+                    Action::make('assign_owner')
+                        ->label('Assign Owner')
+                        ->icon('heroicon-m-user-plus')
+                        ->color('warning')
+                        ->visible(fn (Deal $record): bool => Gate::allows('update', $record))
+                        ->form([
+                            Forms\Components\Select::make('owner_id')
+                                ->label('Owner')
+                                ->relationship('owner', 'name')
+                                ->searchable()
+                                ->preload()
+                                ->required(),
+                        ])
+                        ->action(function (Deal $record, array $data): void {
+                            $record->update(['owner_id' => $data['owner_id']]);
+                            \Filament\Notifications\Notification::make()
+                                ->title('Owner assigned successfully')
+                                ->success()
+                                ->send();
+                        }),
+                    Action::make('change_stage')
+                        ->label('Change Stage')
+                        ->icon('heroicon-m-arrow-right')
+                        ->color('info')
+                        ->visible(fn (Deal $record): bool => Gate::allows('changeStage', $record))
+                        ->form([
+                            Forms\Components\Select::make('stage')
+                                ->options([
+                                    'new' => 'New',
+                                    'qualified' => 'Qualified',
+                                    'proposal' => 'Proposal',
+                                    'negotiation' => 'Negotiation',
+                                    'closed' => 'Closed',
+                                ])
+                                ->required(),
+                        ])
+                        ->action(function (Deal $record, array $data): void {
+                            $record->update(['stage' => $data['stage']]);
+                            \Filament\Notifications\Notification::make()
+                                ->title('Stage changed successfully')
+                                ->success()
+                                ->send();
+                        }),
                     Action::make('mark_won')
                         ->label('Mark Won')
                         ->icon('heroicon-o-trophy')
                         ->color('success')
-                        ->visible(fn ($record) => $record->status === 'open' && Gate::allows('win', $record))
+                        ->visible(fn (Deal $record): bool => $record->status === 'open' && Gate::allows('win', $record))
                         ->form([
                             Forms\Components\TextInput::make('won_amount')
                                 ->label('Won Amount')
                                 ->numeric()
                                 ->minValue(0)
-                                ->default(fn ($record) => $record->amount)
+                                ->default(fn (Deal $record) => $record->amount)
                                 ->helperText('Leave empty to use the original deal amount')
-                                ->prefix(fn ($record) => $record->currency),
+                                ->prefix(fn (Deal $record) => $record->currency),
                         ])
-                        ->action(function ($record, array $data) {
+                        ->action(function (Deal $record, array $data): void {
                             $record->markAsWon($data['won_amount'] ?? null);
-
                             \Filament\Notifications\Notification::make()
                                 ->title('Deal marked as won')
                                 ->success()
                                 ->send();
                         }),
-
                     Action::make('mark_lost')
                         ->label('Mark Lost')
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
-                        ->visible(fn ($record) => $record->status === 'open' && Gate::allows('lose', $record))
+                        ->visible(fn (Deal $record): bool => $record->status === 'open' && Gate::allows('lose', $record))
                         ->form([
                             Forms\Components\Textarea::make('lost_reason')
                                 ->label('Reason for Loss')
@@ -134,9 +300,8 @@ class DealResource extends Resource
                                 ->rows(3)
                                 ->placeholder('Please provide a reason why this deal was lost...'),
                         ])
-                        ->action(function ($record, array $data) {
+                        ->action(function (Deal $record, array $data): void {
                             $record->markAsLost($data['lost_reason']);
-
                             \Filament\Notifications\Notification::make()
                                 ->title('Deal marked as lost')
                                 ->body("Reason: {$data['lost_reason']}")
@@ -144,8 +309,17 @@ class DealResource extends Resource
                                 ->send();
                         }),
                 ])
-                    ->visible(fn ($record) => $record->status === 'open'),
+                    ->label('Actions')
+                    ->icon('heroicon-m-ellipsis-vertical')
+                    ->size('sm')
+                    ->color('gray')
+                    ->button(),
             ])
+            ->searchOnBlur()
+            ->persistSearchInSession()
+            ->persistColumnSearchesInSession()
+            ->persistFiltersInSession()
+            ->persistSortInSession()
             ->defaultSort('created_at', 'desc');
     }
 
@@ -153,32 +327,137 @@ class DealResource extends Resource
     {
         return $schema->schema([
             \Filament\Schemas\Components\Grid::make(12)->schema([
-                \Filament\Schemas\Components\Section::make('Deal')
+                // Header section with key deal information
+                \Filament\Schemas\Components\Section::make('Deal Overview')
                     ->schema([
-                        TextEntry::make('title')->weight('bold')->size('lg'),
-                        TextEntry::make('amount')->money(fn ($record) => $record->currency ?? 'USD')->label('Amount'),
-                        TextEntry::make('probability')->suffix('%')->label('Probability'),
-                        TextEntry::make('expected_close_date')->date()->label('Expected Close'),
-                    ])->columns(2)->columnSpan(8),
-                \Filament\Schemas\Components\Section::make('Status')
-                    ->schema([
-                        TextEntry::make('stage')->badge()->formatStateUsing(fn ($s) => ucfirst($s)),
-                        TextEntry::make('status')->badge()->formatStateUsing(fn ($s) => ucfirst($s)),
-                        TextEntry::make('source')->badge()->label('Source'),
-                        TextEntry::make('created_at')->dateTime()->label('Created'),
-                        TextEntry::make('updated_at')->since()->label('Updated'),
-                    ])->columns(2)->columnSpan(4),
+                        \Filament\Schemas\Components\Grid::make(3)->schema([
+                            TextEntry::make('title')
+                                ->weight('bold')
+                                ->size('lg')
+                                ->columnSpan(2),
+                            TextEntry::make('amount')
+                                ->money(fn (Deal $record): string => $record->currency ?? 'USD')
+                                ->label('Amount')
+                                ->size('lg')
+                                ->weight('bold')
+                                ->color('primary'),
+                        ]),
+                        \Filament\Schemas\Components\Grid::make(4)->schema([
+                            TextEntry::make('stage')
+                                ->badge()
+                                ->formatStateUsing(fn (string $state): string => ucfirst($state))
+                                ->colors([
+                                    'secondary' => 'new',
+                                    'warning' => 'qualified',
+                                    'primary' => 'proposal',
+                                    'success' => 'negotiation',
+                                    'danger' => 'closed',
+                                ]),
+                            TextEntry::make('status')
+                                ->badge()
+                                ->formatStateUsing(fn (string $state): string => ucfirst($state))
+                                ->colors([
+                                    'primary' => 'open',
+                                    'success' => 'won',
+                                    'danger' => 'lost',
+                                ]),
+                            TextEntry::make('source')
+                                ->badge()
+                                ->formatStateUsing(fn (string $state): string => str_replace('_', ' ', ucwords($state, '_')))
+                                ->color('info'),
+                            TextEntry::make('probability')
+                                ->suffix('%')
+                                ->label('Probability')
+                                ->placeholder('Not set'),
+                        ]),
+                    ])
+                    ->columnSpan(12),
+
+                // Contact and Product information
                 \Filament\Schemas\Components\Section::make('Associations')
                     ->schema([
-                        TextEntry::make('contact.name')->label('Contact'),
-                        TextEntry::make('product.name')->label('Product'),
-                        TextEntry::make('owner.name')->label('Owner'),
-                    ])->columns(1)->columnSpan(4),
+                        TextEntry::make('contact.name')
+                            ->label('Contact')
+                            ->url(fn (Deal $record): ?string => $record->contact ? route('filament.admin.resources.contacts.view', $record->contact) : null)
+                            ->color('primary')
+                            ->icon('heroicon-m-user')
+                            ->placeholder('No contact assigned'),
+                        TextEntry::make('contact.email')
+                            ->label('Contact Email')
+                            ->copyable()
+                            ->placeholder('No email'),
+                        TextEntry::make('product.name')
+                            ->label('Product')
+                            ->url(fn (Deal $record): ?string => $record->product ? route('filament.admin.resources.products.view', $record->product) : null)
+                            ->color('primary')
+                            ->icon('heroicon-m-cube')
+                            ->placeholder('No product assigned'),
+                        TextEntry::make('owner.name')
+                            ->label('Owner')
+                            ->icon('heroicon-m-user-circle')
+                            ->placeholder('No owner assigned'),
+                    ])
+                    ->columns(2)
+                    ->columnSpan(6),
+
+                // Key dates and metrics
+                \Filament\Schemas\Components\Section::make('Timeline & Metrics')
+                    ->schema([
+                        TextEntry::make('expected_close_date')
+                            ->date()
+                            ->label('Expected Close')
+                            ->icon('heroicon-m-calendar')
+                            ->placeholder('Not set'),
+                        TextEntry::make('created_at')
+                            ->dateTime()
+                            ->label('Created'),
+                        TextEntry::make('updated_at')
+                            ->since()
+                            ->label('Last Updated'),
+                        TextEntry::make('closed_at')
+                            ->dateTime()
+                            ->label('Closed At')
+                            ->placeholder('Not closed')
+                            ->visible(fn (Deal $record): bool => in_array($record->status, ['won', 'lost'])),
+                    ])
+                    ->columns(2)
+                    ->columnSpan(6),
+
+                // Won/Lost details if applicable
+                \Filament\Schemas\Components\Section::make('Outcome Details')
+                    ->schema([
+                        TextEntry::make('won_amount')
+                            ->money(fn (Deal $record): string => $record->currency ?? 'USD')
+                            ->label('Won Amount')
+                            ->icon('heroicon-m-trophy')
+                            ->color('success')
+                            ->visible(fn (Deal $record): bool => $record->status === 'won'),
+                        TextEntry::make('lost_reason')
+                            ->label('Lost Reason')
+                            ->icon('heroicon-m-x-circle')
+                            ->color('danger')
+                            ->visible(fn (Deal $record): bool => $record->status === 'lost'),
+                    ])
+                    ->columns(1)
+                    ->columnSpan(6)
+                    ->visible(fn (Deal $record): bool => in_array($record->status, ['won', 'lost'])),
+
+                // Notes section
                 \Filament\Schemas\Components\Section::make('Notes')
                     ->schema([
-                        TextEntry::make('notes')->markdown()->default('No notes recorded.'),
-                        TextEntry::make('source_meta')->label('Source Meta')->default('-'),
-                    ])->collapsed()->collapsible()->columnSpan(8),
+                        TextEntry::make('notes')
+                            ->markdown()
+                            ->placeholder('No notes recorded.')
+                            ->columnSpanFull(),
+                        TextEntry::make('source_meta')
+                            ->label('Source Metadata')
+                            ->formatStateUsing(fn ($state): string => $state ? json_encode($state, JSON_PRETTY_PRINT) : 'None')
+                            ->placeholder('None')
+                            ->columnSpanFull(),
+                    ])
+                    ->collapsible()
+                    ->collapsed()
+                    ->columnSpan(12),
             ])->columnSpanFull(),
         ]);
     }
@@ -192,7 +471,10 @@ class DealResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            \App\Filament\Resources\DealResource\RelationManagers\ActivitiesRelationManager::class,
+            \App\Filament\Resources\DealResource\RelationManagers\TasksRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
