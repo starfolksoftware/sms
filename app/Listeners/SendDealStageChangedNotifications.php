@@ -2,14 +2,14 @@
 
 namespace App\Listeners;
 
-use App\Events\DealWon;
-use App\Notifications\DealWonNotification;
+use App\Events\DealStageChanged;
+use App\Notifications\DealStageChangedNotification;
 use App\Services\DealNotificationService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Notification;
 
-class SendDealWonNotifications implements ShouldQueue
+class SendDealStageChangedNotifications implements ShouldQueue
 {
     use InteractsWithQueue;
 
@@ -17,22 +17,22 @@ class SendDealWonNotifications implements ShouldQueue
         private DealNotificationService $notificationService
     ) {}
 
-    public function handle(DealWon $event): void
+    public function handle(DealStageChanged $event): void
     {
         $deal = $event->deal;
 
         // Get users to notify using the notification service
-        $usersToNotify = $this->notificationService->getUsersForDealWon($deal);
+        $usersToNotify = $this->notificationService->getUsersForDealStageChanged($deal);
 
         // Filter users based on their preferences
         $usersToNotify = $this->notificationService->filterUsersByPreferences(
             $usersToNotify, 
-            'deal_won'
+            'deal_stage_changed'
         );
 
         // Send notifications
         if ($usersToNotify->isNotEmpty()) {
-            Notification::send($usersToNotify, new DealWonNotification($deal));
+            Notification::send($usersToNotify, new DealStageChangedNotification($deal, $event->from, $event->to));
         }
     }
 }
