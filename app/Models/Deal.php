@@ -23,7 +23,7 @@ class Deal extends Model
         'title', 'contact_id', 'product_id', 'owner_id',
         'amount', 'currency', 'stage', 'status', 'expected_close_date',
         'probability', 'lost_reason', 'won_amount', 'closed_at',
-        'source', 'source_meta', 'notes',
+        'source', 'source_meta', 'notes', 'deal_stage_id',
     ];
 
     protected $casts = [
@@ -55,6 +55,11 @@ class Deal extends Model
     public function tasks(): HasMany
     {
         return $this->hasMany(Task::class);
+    }
+
+    public function dealStage(): BelongsTo
+    {
+        return $this->belongsTo(DealStage::class);
     }
 
     public function getActivitylogOptions(): LogOptions
