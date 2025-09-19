@@ -15,8 +15,8 @@ class DealNotificationService
     {
         $users = collect();
 
-        // Add deal owner if exists and is different from the creator
-        if ($deal->owner && $deal->owner->id !== auth()->id()) {
+        // Add deal owner if exists
+        if ($deal->owner) {
             $users->push($deal->owner);
         }
 
