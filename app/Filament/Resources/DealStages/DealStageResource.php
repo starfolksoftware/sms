@@ -13,10 +13,9 @@ use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
-use Filament\Tables\Columns\ToggleColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
 
 class DealStageResource extends Resource
@@ -44,7 +43,7 @@ class DealStageResource extends Resource
                     ->required()
                     ->maxLength(255)
                     ->live(onBlur: true)
-                    ->afterStateUpdated(fn (string $operation, $state, Forms\Set $set) => $operation === 'create' ? $set('slug', \Illuminate\Support\Str::slug($state)) : null),
+                    ->afterStateUpdated(fn (string $operation, $state, \Filament\Forms\Set $set) => $operation === 'create' ? $set('slug', \Illuminate\Support\Str::slug($state)) : null),
 
                 Forms\Components\TextInput::make('slug')
                     ->required()
@@ -95,8 +94,13 @@ class DealStageResource extends Resource
 
                 BadgeColumn::make('type')
                     ->getStateUsing(function (DealStage $record) {
-                        if ($record->is_winning_stage) return 'Winning';
-                        if ($record->is_losing_stage) return 'Losing';
+                        if ($record->is_winning_stage) {
+                            return 'Winning';
+                        }
+                        if ($record->is_losing_stage) {
+                            return 'Losing';
+                        }
+
                         return 'Regular';
                     })
                     ->color(function (string $state) {
@@ -134,6 +138,7 @@ class DealStageResource extends Resource
                     DeleteBulkAction::make(),
                 ]),
             ])
+            ->reorderable('order')
             ->defaultSort('order');
     }
 
