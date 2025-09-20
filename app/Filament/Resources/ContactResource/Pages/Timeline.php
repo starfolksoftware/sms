@@ -6,6 +6,7 @@ use App\DTOs\TimelineFilters;
 use App\Filament\Resources\ContactResource;
 use App\Services\ContactTimelineService;
 use Carbon\Carbon;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -13,7 +14,6 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Filament\Schemas\Schema;
-use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -35,7 +35,7 @@ class Timeline extends Page implements HasForms, HasTable
     protected static ?string $title = 'Timeline';
 
     #[Url]
-    public array $tableFilters = [
+    public array $timelineFilters = [
         'types' => ['tasks', 'deals', 'system'],
         'date_from' => null,
         'date_to' => null,
@@ -46,7 +46,7 @@ class Timeline extends Page implements HasForms, HasTable
         $this->record = $this->resolveRecord($record);
 
         // Initialize filters from URL
-        $this->tableFilters = [
+        $this->timelineFilters = [
             'types' => request()->get('types', ['tasks', 'deals', 'system']),
             'date_from' => request()->get('date_from'),
             'date_to' => request()->get('date_to'),
@@ -59,9 +59,9 @@ class Timeline extends Page implements HasForms, HasTable
 
         // Convert filters to TimelineFilters DTO
         $filters = TimelineFilters::fromArray([
-            'types' => $this->tableFilters['types'] ?? ['tasks', 'deals', 'system'],
-            'from' => $this->tableFilters['date_from'] ? Carbon::parse($this->tableFilters['date_from']) : null,
-            'to' => $this->tableFilters['date_to'] ? Carbon::parse($this->tableFilters['date_to']) : null,
+            'types' => $this->timelineFilters['types'] ?? ['tasks', 'deals', 'system'],
+            'from' => $this->timelineFilters['date_from'] ? Carbon::parse($this->timelineFilters['date_from']) : null,
+            'to' => $this->timelineFilters['date_to'] ? Carbon::parse($this->timelineFilters['date_to']) : null,
             'limit' => 25,
         ]);
 
@@ -128,7 +128,7 @@ class Timeline extends Page implements HasForms, HasTable
                     ->label('Reset Filters')
                     ->color('gray')
                     ->action(function () {
-                        $this->tableFilters = [
+                        $this->timelineFilters = [
                             'types' => ['tasks', 'deals', 'system'],
                             'date_from' => null,
                             'date_to' => null,
@@ -151,31 +151,31 @@ class Timeline extends Page implements HasForms, HasTable
                         'system' => 'System Events',
                         'emails' => 'Emails',
                     ])
-                    ->default($this->tableFilters['types'] ?? ['tasks', 'deals', 'system'])
+                    ->default($this->timelineFilters['types'] ?? ['tasks', 'deals', 'system'])
                     ->live()
-                    ->afterStateUpdated(fn (array $state) => $this->updateTableFilters(['types' => $state])),
+                    ->afterStateUpdated(fn (array $state) => $this->updateTimelineFilters(['types' => $state])),
 
                 DatePicker::make('date_from')
                     ->label('From Date')
-                    ->default($this->tableFilters['date_from'])
+                    ->default($this->timelineFilters['date_from'])
                     ->live()
-                    ->afterStateUpdated(fn (?string $state) => $this->updateTableFilters(['date_from' => $state])),
+                    ->afterStateUpdated(fn (?string $state) => $this->updateTimelineFilters(['date_from' => $state])),
 
                 DatePicker::make('date_to')
                     ->label('To Date')
-                    ->default($this->tableFilters['date_to'])
+                    ->default($this->timelineFilters['date_to'])
                     ->live()
-                    ->afterStateUpdated(fn (?string $state) => $this->updateTableFilters(['date_to' => $state])),
+                    ->afterStateUpdated(fn (?string $state) => $this->updateTimelineFilters(['date_to' => $state])),
             ])
             ->columns(3);
     }
 
-    public function updateTableFilters(array $filters): void
+    public function updateTimelineFilters(array $filters): void
     {
-        $this->tableFilters = array_merge($this->tableFilters, $filters);
+        $this->timelineFilters = array_merge($this->timelineFilters, $filters);
 
         // Update URL with new filters
-        $queryParams = array_filter($this->tableFilters, fn ($value) => $value !== null && $value !== []);
+        $queryParams = array_filter($this->timelineFilters, fn ($value) => $value !== null && $value !== []);
         $this->redirect(request()->fullUrlWithQuery($queryParams));
     }
 
