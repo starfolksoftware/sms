@@ -4,9 +4,6 @@ namespace App\Filament\Widgets;
 
 use App\Models\Contact;
 use App\Services\ContactTimelineService;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Form;
 use Filament\Widgets\Widget;
 use Illuminate\Database\Eloquent\Model;
 
@@ -32,7 +29,7 @@ class ContactTimelineWidget extends Widget
     public function getTimeline()
     {
         if (! $this->record instanceof Contact) {
-            return null;
+            return collect();
         }
 
         $service = new ContactTimelineService;
@@ -40,9 +37,15 @@ class ContactTimelineWidget extends Widget
         return $service->getTimeline($this->record, $this->filters);
     }
 
-    public function updateFilters(array $filters): void
+    public function updateTypeFilter(array $types): void
     {
-        $this->filters = array_merge($this->filters, array_filter($filters, fn ($value) => $value !== null));
+        $this->filters['types'] = $types;
+        $this->dispatch('filtersUpdated');
+    }
+
+    public function updateDateFromFilter(?string $dateFrom): void
+    {
+        $this->filters['date_from'] = $dateFrom;
         $this->dispatch('filtersUpdated');
     }
 
@@ -54,36 +57,6 @@ class ContactTimelineWidget extends Widget
             'date_to' => null,
         ];
         $this->dispatch('filtersReset');
-    }
-
-    public function form(Form $form): Form
-    {
-        return $form
-            ->schema([
-                Select::make('types')
-                    ->label('Event Types')
-                    ->multiple()
-                    ->options([
-                        'tasks' => 'Tasks',
-                        'deals' => 'Deals',
-                        'system' => 'System Events',
-                        'emails' => 'Emails',
-                    ])
-                    ->default(['tasks', 'deals', 'system'])
-                    ->live()
-                    ->afterStateUpdated(fn (array $state) => $this->updateFilters(['types' => $state])),
-
-                DatePicker::make('date_from')
-                    ->label('From Date')
-                    ->live()
-                    ->afterStateUpdated(fn (?string $state) => $this->updateFilters(['date_from' => $state])),
-
-                DatePicker::make('date_to')
-                    ->label('To Date')
-                    ->live()
-                    ->afterStateUpdated(fn (?string $state) => $this->updateFilters(['date_to' => $state])),
-            ])
-            ->columns(3);
     }
 
     public function getEventTypeColor(string $type): string
