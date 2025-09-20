@@ -3,17 +3,17 @@
     "private": true,
     "type": "module",
     "scripts": {
-          "build": "vite build",
-          "dev": "vite",
-          "serve": "php artisan serve --host=0.0.0.0 --port=8000",
-          "dev:full": "concurrently -k -n APP,VITE -c blue,magenta \"npm:serve\" \"npm:dev\""
+        "build": "vite build",
+        "dev": "vite",
+        "serve": "php artisan serve --host=0.0.0.0 --port=8000",
+        "dev:full": "concurrently -k -n APP,VITE -c blue,magenta \"npm:serve\" \"npm:dev\""
     },
     "devDependencies": {
-        "@tailwindcss/vite": "^4.0.0",
+        "@tailwindcss/vite": "^4.1.13",
         "axios": "^1.11.0",
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^2.0.0",
-        "tailwindcss": "^4.0.0",
+        "tailwindcss": "^4.1.13",
         "vite": "^7.0.4"
     }
 }
