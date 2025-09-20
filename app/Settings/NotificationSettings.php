@@ -7,59 +7,59 @@ use Spatie\LaravelSettings\Settings;
 class NotificationSettings extends Settings
 {
     // Deal Created Notifications
-    public bool $deal_created_enabled;
+    public bool $dealCreatedEnabled;
 
-    public array $deal_created_roles;
+    public array $dealCreatedRoles;
 
-    public array $deal_created_users;
+    public array $dealCreatedUsers;
 
-    public bool $deal_created_email_enabled;
+    public bool $dealCreatedEmailEnabled;
 
-    public bool $deal_created_database_enabled;
+    public bool $dealCreatedDatabaseEnabled;
 
     // Deal Stage Changed Notifications
-    public bool $deal_stage_changed_enabled;
+    public bool $dealStageChangedEnabled;
 
-    public array $deal_stage_changed_roles;
+    public array $dealStageChangedRoles;
 
-    public array $deal_stage_changed_users;
+    public array $dealStageChangedUsers;
 
-    public bool $deal_stage_changed_email_enabled;
+    public bool $dealStageChangedEmailEnabled;
 
-    public bool $deal_stage_changed_database_enabled;
+    public bool $dealStageChangedDatabaseEnabled;
 
     // Deal Won Notifications
-    public bool $deal_won_enabled;
+    public bool $dealWonEnabled;
 
-    public array $deal_won_roles;
+    public array $dealWonRoles;
 
-    public array $deal_won_users;
+    public array $dealWonUsers;
 
-    public bool $deal_won_email_enabled;
+    public bool $dealWonEmailEnabled;
 
-    public bool $deal_won_database_enabled;
+    public bool $dealWonDatabaseEnabled;
 
     // Deal Lost Notifications
-    public bool $deal_lost_enabled;
+    public bool $dealLostEnabled;
 
-    public array $deal_lost_roles;
+    public array $dealLostRoles;
 
-    public array $deal_lost_users;
+    public array $dealLostUsers;
 
-    public bool $deal_lost_email_enabled;
+    public bool $dealLostEmailEnabled;
 
-    public bool $deal_lost_database_enabled;
+    public bool $dealLostDatabaseEnabled;
 
     // Deal Assigned Notifications
-    public bool $deal_assigned_enabled;
+    public bool $dealAssignedEnabled;
 
-    public array $deal_assigned_roles;
+    public array $dealAssignedRoles;
 
-    public array $deal_assigned_users;
+    public array $dealAssignedUsers;
 
-    public bool $deal_assigned_email_enabled;
+    public bool $dealAssignedEmailEnabled;
 
-    public bool $deal_assigned_database_enabled;
+    public bool $dealAssignedDatabaseEnabled;
 
     public static function group(): string
     {
@@ -77,11 +77,11 @@ class NotificationSettings extends Settings
     public function isEventEnabled(string $eventType): bool
     {
         return match ($eventType) {
-            'deal_created' => $this->deal_created_enabled,
-            'deal_stage_changed' => $this->deal_stage_changed_enabled,
-            'deal_won' => $this->deal_won_enabled,
-            'deal_lost' => $this->deal_lost_enabled,
-            'deal_assigned' => $this->deal_assigned_enabled,
+            'deal_created' => $this->dealCreatedEnabled,
+            'deal_stage_changed' => $this->dealStageChangedEnabled,
+            'deal_won' => $this->dealWonEnabled,
+            'deal_lost' => $this->dealLostEnabled,
+            'deal_assigned' => $this->dealAssignedEnabled,
             default => false,
         };
     }
@@ -96,16 +96,16 @@ class NotificationSettings extends Settings
         }
 
         return match ("{$eventType}_{$channel}") {
-            'deal_created_email' => $this->deal_created_email_enabled,
-            'deal_created_database' => $this->deal_created_database_enabled,
-            'deal_stage_changed_email' => $this->deal_stage_changed_email_enabled,
-            'deal_stage_changed_database' => $this->deal_stage_changed_database_enabled,
-            'deal_won_email' => $this->deal_won_email_enabled,
-            'deal_won_database' => $this->deal_won_database_enabled,
-            'deal_lost_email' => $this->deal_lost_email_enabled,
-            'deal_lost_database' => $this->deal_lost_database_enabled,
-            'deal_assigned_email' => $this->deal_assigned_email_enabled,
-            'deal_assigned_database' => $this->deal_assigned_database_enabled,
+            'deal_created_email' => $this->dealCreatedEmailEnabled,
+            'deal_created_database' => $this->dealCreatedDatabaseEnabled,
+            'deal_stage_changed_email' => $this->dealStageChangedEmailEnabled,
+            'deal_stage_changed_database' => $this->dealStageChangedDatabaseEnabled,
+            'deal_won_email' => $this->dealWonEmailEnabled,
+            'deal_won_database' => $this->dealWonDatabaseEnabled,
+            'deal_lost_email' => $this->dealLostEmailEnabled,
+            'deal_lost_database' => $this->dealLostDatabaseEnabled,
+            'deal_assigned_email' => $this->dealAssignedEmailEnabled,
+            'deal_assigned_database' => $this->dealAssignedDatabaseEnabled,
             default => false,
         };
     }
@@ -116,11 +116,11 @@ class NotificationSettings extends Settings
     public function getNotificationRoles(string $eventType): array
     {
         return match ($eventType) {
-            'deal_created' => $this->deal_created_roles,
-            'deal_stage_changed' => $this->deal_stage_changed_roles,
-            'deal_won' => $this->deal_won_roles,
-            'deal_lost' => $this->deal_lost_roles,
-            'deal_assigned' => $this->deal_assigned_roles,
+            'deal_created' => $this->dealCreatedRoles,
+            'deal_stage_changed' => $this->dealStageChangedRoles,
+            'deal_won' => $this->dealWonRoles,
+            'deal_lost' => $this->dealLostRoles,
+            'deal_assigned' => $this->dealAssignedRoles,
             default => [],
         };
     }
@@ -131,11 +131,11 @@ class NotificationSettings extends Settings
     public function getNotificationUsers(string $eventType): array
     {
         return match ($eventType) {
-            'deal_created' => $this->deal_created_users,
-            'deal_stage_changed' => $this->deal_stage_changed_users,
-            'deal_won' => $this->deal_won_users,
-            'deal_lost' => $this->deal_lost_users,
-            'deal_assigned' => $this->deal_assigned_users,
+            'deal_created' => $this->dealCreatedUsers,
+            'deal_stage_changed' => $this->dealStageChangedUsers,
+            'deal_won' => $this->dealWonUsers,
+            'deal_lost' => $this->dealLostUsers,
+            'deal_assigned' => $this->dealAssignedUsers,
             default => [],
         };
     }
