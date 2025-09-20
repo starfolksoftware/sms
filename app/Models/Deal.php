@@ -91,7 +91,7 @@ class Deal extends Model
             ])
             ->log('Deal marked as won');
 
-        DealWon::dispatch($this, $this->won_amount);
+        DealWon::dispatch($this, (float) $this->won_amount);
     }
 
     public function markAsLost(string $reason): void
