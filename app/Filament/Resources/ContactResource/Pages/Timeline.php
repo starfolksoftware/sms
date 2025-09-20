@@ -69,19 +69,19 @@ class Timeline extends Page implements HasForms, HasTable
         $timelineResult = $timelineService->fetch($this->record, $filters);
 
         return $table
-            ->query(fn () => collect($timelineResult->events))
+            ->records(fn () => $timelineResult->events->map(fn ($event) => $event->toArray())->toArray())
             ->paginated(false)
             ->columns([
                 TextColumn::make('when')
                     ->label('When')
-                    ->getStateUsing(fn ($record) => $record->timestamp->diffForHumans())
-                    ->tooltip(fn ($record) => $record->timestamp->format('M j, Y g:i A'))
+                    ->getStateUsing(fn ($record) => Carbon::parse($record['timestamp'])->diffForHumans())
+                    ->tooltip(fn ($record) => Carbon::parse($record['timestamp'])->format('M j, Y g:i A'))
                     ->sortable(false),
 
                 TextColumn::make('type')
                     ->badge()
                     ->label('Type')
-                    ->getStateUsing(fn ($record) => ucfirst($record->type))
+                    ->getStateUsing(fn ($record) => ucfirst($record['type']))
                     ->colors([
                         'primary' => 'task',
                         'success' => 'deal',
@@ -97,28 +97,28 @@ class Timeline extends Page implements HasForms, HasTable
 
                 TextColumn::make('title')
                     ->label('Event')
-                    ->getStateUsing(fn ($record) => $record->title)
+                    ->getStateUsing(fn ($record) => $record['title'])
                     ->searchable(false)
                     ->limit(50),
 
                 TextColumn::make('summary')
                     ->label('Details')
-                    ->getStateUsing(fn ($record) => $record->summary)
+                    ->getStateUsing(fn ($record) => $record['summary'])
                     ->limit(100)
                     ->placeholder('—'),
 
                 TextColumn::make('actor')
                     ->label('Actor')
-                    ->getStateUsing(fn ($record) => $record->actor['name'] ?? 'System')
+                    ->getStateUsing(fn ($record) => $record['actor']['name'] ?? 'System')
                     ->placeholder('—'),
             ])
             ->recordActions([
                 Action::make('view')
                     ->label('View')
                     ->icon('heroicon-m-eye')
-                    ->url(fn ($record) => $record->link['url'] ?? null)
+                    ->url(fn ($record) => $record['link']['url'] ?? null)
                     ->openUrlInNewTab()
-                    ->visible(fn ($record) => ! empty($record->link['url'])),
+                    ->visible(fn ($record) => ! empty($record['link']['url'])),
             ])
             ->emptyStateHeading('No timeline events found')
             ->emptyStateDescription('Try adjusting your filters or check back later for new activity.')
