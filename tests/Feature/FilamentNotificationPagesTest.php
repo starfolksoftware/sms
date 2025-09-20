@@ -27,7 +27,7 @@ class FilamentNotificationPagesTest extends TestCase
         $admin = User::factory()->create();
         $admin->assignRole('Admin');
 
-        Filament::setCurrentPanel('app');
+        Filament::setCurrentPanel('admin');
 
         $this->actingAs($admin);
 
@@ -42,7 +42,7 @@ class FilamentNotificationPagesTest extends TestCase
         $user = User::factory()->create();
         $user->assignRole('Sales');
 
-        Filament::setCurrentPanel('app');
+        Filament::setCurrentPanel('admin');
 
         $this->actingAs($user);
 
@@ -57,7 +57,7 @@ class FilamentNotificationPagesTest extends TestCase
         $user = User::factory()->create();
         $user->assignRole('Sales');
 
-        Filament::setCurrentPanel('app');
+        Filament::setCurrentPanel('admin');
 
         $this->actingAs($user);
 
@@ -87,7 +87,7 @@ class FilamentNotificationPagesTest extends TestCase
         $admin = User::factory()->create();
         $admin->assignRole('Admin');
 
-        Filament::setCurrentPanel('app');
+        Filament::setCurrentPanel('admin');
 
         $this->actingAs($admin);
 

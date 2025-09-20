@@ -24,13 +24,7 @@ class SendDealCreatedNotifications implements ShouldQueue
         // Get users to notify using the notification service
         $usersToNotify = $this->notificationService->getUsersForDealCreated($deal);
 
-        // Filter users based on their preferences
-        $usersToNotify = $this->notificationService->filterUsersByPreferences(
-            $usersToNotify, 
-            'deal_created'
-        );
-
-        // Send notifications
+        // Send notifications - let the notification's via() method handle channel selection
         if ($usersToNotify->isNotEmpty()) {
             Notification::send($usersToNotify, new DealCreatedNotification($deal));
         }

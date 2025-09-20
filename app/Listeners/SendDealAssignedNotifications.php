@@ -26,13 +26,7 @@ class SendDealAssignedNotifications implements ShouldQueue
         // Get users to notify using the notification service
         $usersToNotify = $this->notificationService->getUsersForDealAssigned($deal, $oldOwner, $newOwner);
 
-        // Filter users based on their preferences
-        $usersToNotify = $this->notificationService->filterUsersByPreferences(
-            $usersToNotify, 
-            'deal_assigned'
-        );
-
-        // Send notifications
+        // Send notifications - let the notification's via() method handle channel selection
         if ($usersToNotify->isNotEmpty()) {
             Notification::send($usersToNotify, new DealAssignedNotification($deal, $oldOwner, $newOwner));
         }
