@@ -8,6 +8,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Filament\Actions\Action; // Added this line to import Action
 
 class DealWonNotification extends Notification implements ShouldQueue
 {
@@ -54,9 +55,17 @@ class DealWonNotification extends Notification implements ShouldQueue
             ->body("Deal '{$this->deal->title}' has been marked as won for ".number_format($this->deal->won_amount, 2).' '.$this->deal->currency)
             ->success()
             ->actions([
-                \Filament\Notifications\Actions\Action::make('view')
+                Action::make('view')
                     ->label('View Deal')
                     ->url(route('filament.admin.resources.deals.view', $this->deal)),
             ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toDatabase(object $notifiable): array
+    {
+        return $this->toFilament()->getDatabaseMessage();
     }
 }

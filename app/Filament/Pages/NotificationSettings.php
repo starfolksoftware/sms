@@ -4,12 +4,12 @@ namespace App\Filament\Pages;
 
 use BackedEnum;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
 use Filament\Pages\Page;
-use Filament\Support\Facades\FilamentIcon;
+use Filament\Notifications\Notification as FilamentNotification;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use UnitEnum;
 
@@ -29,7 +29,7 @@ class NotificationSettings extends Page
 
     public static function canAccess(): bool
     {
-        return Gate::allows('manage_notifications') || auth()->user()->hasRole('Admin');
+        return Gate::allows('manage_notifications') || (Auth::user()?->hasRole('Admin') ?? false);
     }
 
     public function mount(): void
@@ -50,7 +50,11 @@ class NotificationSettings extends Page
         ]);
     }
 
-    public function form(Form $form): Form
+    /**
+     * @param \Filament\Forms\Form $form
+     * @return \Filament\Forms\Form
+     */
+    public function form($form)
     {
         return $form
             ->schema([
@@ -148,6 +152,9 @@ class NotificationSettings extends Page
         // TODO: Save notification settings to database or config
         // For now, we'll just show a success message
 
-        $this->notify('success', 'Notification settings saved successfully!');
+        FilamentNotification::make()
+            ->title('Notification settings saved successfully!')
+            ->success()
+            ->send();
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Deal;
+use Filament\Actions\Action;
 use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -56,9 +57,19 @@ class DealCreatedNotification extends Notification implements ShouldQueue
             ->body("Deal '{$this->deal->title}' has been created for ".number_format($this->deal->amount, 2).' '.$this->deal->currency)
             ->success()
             ->actions([
-                \Filament\Notifications\Actions\Action::make('view')
+                Action::make('view')
                     ->label('View Deal')
                     ->url(route('filament.admin.resources.deals.view', $this->deal)),
             ]);
+    }
+
+    /**
+     * Store a Filament database notification payload.
+     *
+     * @return array<string, mixed>
+     */
+    public function toDatabase(object $notifiable): array
+    {
+        return $this->toFilament()->getDatabaseMessage();
     }
 }

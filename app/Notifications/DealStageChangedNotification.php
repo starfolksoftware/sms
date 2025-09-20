@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Deal;
+use Filament\Actions\Action;
 use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -35,7 +36,7 @@ class DealStageChangedNotification extends Notification implements ShouldQueue
             ->line("Stage Change: {$this->fromStage} → {$this->toStage}")
             ->line("Contact: {$this->deal->contact->name}")
             ->line('Amount: '.number_format($this->deal->amount, 2).' '.$this->deal->currency)
-            ->line("Owner: {$this->deal->owner?->name ?? 'Unassigned'}")
+                ->line('Owner: ' . ($this->deal->owner?->name ?? 'Unassigned'))
             ->action('View Deal', $url)
             ->line('Keep the momentum going!');
     }
@@ -61,9 +62,17 @@ class DealStageChangedNotification extends Notification implements ShouldQueue
             ->body("Deal '{$this->deal->title}' moved from {$this->fromStage} to {$this->toStage}")
             ->info()
             ->actions([
-                \Filament\Notifications\Actions\Action::make('view')
+                    Action::make('view')
                     ->label('View Deal')
                     ->url(route('filament.admin.resources.deals.view', $this->deal)),
             ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toDatabase(object $notifiable): array
+    {
+        return $this->toFilament()->getDatabaseMessage();
     }
 }

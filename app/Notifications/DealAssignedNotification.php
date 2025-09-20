@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\Deal;
 use App\Models\User;
+use Filament\Actions\Action;
 use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -66,9 +67,17 @@ class DealAssignedNotification extends Notification implements ShouldQueue
             ->body("Deal '{$this->deal->title}' reassigned from {$oldOwnerName} to {$this->newOwner->name}")
             ->warning()
             ->actions([
-                \Filament\Notifications\Actions\Action::make('view')
+                Action::make('view')
                     ->label('View Deal')
                     ->url(route('filament.admin.resources.deals.view', $this->deal)),
             ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toDatabase(object $notifiable): array
+    {
+        return $this->toFilament()->getDatabaseMessage();
     }
 }
