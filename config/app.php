@@ -107,6 +107,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Webhook Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for incoming webhooks including authentication tokens
+    | and rate limiting settings.
+    |
+    */
+
+    'webhook_lead_token' => env('WEBHOOK_LEAD_TOKEN'),
+    'webhook_rate_limit' => env('WEBHOOK_RATE_LIMIT', 30),
+    'default_lead_owner_id' => env('DEFAULT_LEAD_OWNER_ID'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Maintenance Mode Driver
     |--------------------------------------------------------------------------
     |
