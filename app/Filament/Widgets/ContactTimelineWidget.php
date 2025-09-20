@@ -5,7 +5,6 @@ namespace App\Filament\Widgets;
 use App\Models\Contact;
 use App\Services\ContactTimelineService;
 use Filament\Widgets\Widget;
-use Illuminate\Database\Eloquent\Model;
 
 class ContactTimelineWidget extends Widget
 {
@@ -13,7 +12,7 @@ class ContactTimelineWidget extends Widget
 
     protected int|string|array $columnSpan = 'full';
 
-    public ?Model $record = null;
+    public $record = null;
 
     public array $filters = [
         'types' => ['tasks', 'deals', 'system'],
@@ -21,7 +20,7 @@ class ContactTimelineWidget extends Widget
         'date_to' => null,
     ];
 
-    public function mount(?Model $record = null): void
+    public function mount($record = null): void
     {
         $this->record = $record;
     }
