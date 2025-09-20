@@ -23,6 +23,7 @@ class AccessTest extends TestCase
     {
         Filament::setCurrentPanel('admin');
 
+        /** @var \App\Models\User $user */
         $user = User::factory()->create();
         $user->assignRole('Admin');
         $user->givePermissionTo(['view_dashboard', 'view_deals']);
@@ -37,6 +38,7 @@ class AccessTest extends TestCase
     {
         Filament::setCurrentPanel('admin');
 
+        /** @var \App\Models\User $user */
         $user = User::factory()->create();
         $user->assignRole('Admin');
         $user->givePermissionTo(['view_dashboard', 'view_deals']);

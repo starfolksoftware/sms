@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\Contact;
 use App\Models\Deal;
 use App\Models\User;
-use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -23,10 +22,11 @@ class DealUITest extends TestCase
     public function test_can_render_deal_list_with_enhanced_filters(): void
     {
         \Filament\Facades\Filament::setCurrentPanel('admin');
-        
+
+        /** @var \App\Models\User $user */
         $user = User::factory()->create();
         $user->assignRole('Sales');
-        
+
         $contact = Contact::factory()->create();
         Deal::factory()->count(5)->create(['contact_id' => $contact->id]);
 
@@ -39,10 +39,11 @@ class DealUITest extends TestCase
     public function test_can_render_deal_detail_view_with_timeline(): void
     {
         \Filament\Facades\Filament::setCurrentPanel('admin');
-        
+
+        /** @var \App\Models\User $user */
         $user = User::factory()->create();
         $user->assignRole('Sales');
-        
+
         $contact = Contact::factory()->create();
         $deal = Deal::factory()->create(['contact_id' => $contact->id]);
 
@@ -55,10 +56,11 @@ class DealUITest extends TestCase
     public function test_can_filter_deals_by_status(): void
     {
         \Filament\Facades\Filament::setCurrentPanel('admin');
-        
+
+        /** @var \App\Models\User $user */
         $user = User::factory()->create();
         $user->assignRole('Sales');
-        
+
         $contact = Contact::factory()->create();
         Deal::factory()->create(['contact_id' => $contact->id, 'status' => 'open']);
         Deal::factory()->create(['contact_id' => $contact->id, 'status' => 'won']);
@@ -73,13 +75,14 @@ class DealUITest extends TestCase
     public function test_shows_activities_timeline_for_a_deal(): void
     {
         \Filament\Facades\Filament::setCurrentPanel('admin');
-        
+
+        /** @var \App\Models\User $user */
         $user = User::factory()->create();
         $user->assignRole('Sales');
-        
+
         $contact = Contact::factory()->create();
         $deal = Deal::factory()->create(['contact_id' => $contact->id]);
-        
+
         // Create an activity
         activity()->performedOn($deal)->log('Deal created');
 

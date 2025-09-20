@@ -25,7 +25,8 @@ class DealStageUITest extends TestCase
     public function test_admin_can_access_deal_stages_page(): void
     {
         \Filament\Facades\Filament::setCurrentPanel('admin');
-        
+
+        /** @var \App\Models\User $user */
         $user = User::factory()->create();
         $user->assignRole('Admin');
 
