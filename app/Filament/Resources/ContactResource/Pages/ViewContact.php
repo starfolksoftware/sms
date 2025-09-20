@@ -3,8 +3,9 @@
 namespace App\Filament\Resources\ContactResource\Pages;
 
 use App\Filament\Resources\ContactResource;
-use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Widgets\ContactTimelineWidget;
 use Filament\Actions\EditAction;
+use Filament\Resources\Pages\ViewRecord;
 
 class ViewContact extends ViewRecord
 {
@@ -15,5 +16,17 @@ class ViewContact extends ViewRecord
         return [
             EditAction::make(),
         ];
+    }
+
+    protected function getFooterWidgets(): array
+    {
+        return [
+            ContactTimelineWidget::class,
+        ];
+    }
+
+    public function getFooterWidgetsColumns(): int|array
+    {
+        return 1;
     }
 }
