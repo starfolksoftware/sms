@@ -20,7 +20,7 @@ class ContactTimelineController extends Controller
     public function index(Contact $contact, Request $request): JsonResponse
     {
         // Authorize access to contact
-        $this->authorize('view', $contact);
+        $request->user()->can('view', $contact) || abort(403);
 
         // Validate query parameters
         $validated = $request->validate([

@@ -10,11 +10,10 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Columns\BadgeColumn;
+use Filament\Schemas\Schema;
+use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -29,9 +28,9 @@ class Timeline extends Page implements HasForms, HasTable
 
     protected static string $resource = ContactResource::class;
 
-    protected static string $view = 'filament.resources.contact-resource.pages.timeline';
+    protected string $view = 'filament.resources.contact-resource.pages.timeline';
 
-    protected static ?string $navigationIcon = 'heroicon-o-clock';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-clock';
 
     protected static ?string $title = 'Timeline';
 
@@ -79,7 +78,8 @@ class Timeline extends Page implements HasForms, HasTable
                     ->tooltip(fn ($record) => $record->timestamp->format('M j, Y g:i A'))
                     ->sortable(false),
 
-                BadgeColumn::make('type')
+                TextColumn::make('type')
+                    ->badge()
                     ->label('Type')
                     ->getStateUsing(fn ($record) => ucfirst($record->type))
                     ->colors([
@@ -112,7 +112,7 @@ class Timeline extends Page implements HasForms, HasTable
                     ->getStateUsing(fn ($record) => $record->actor['name'] ?? 'System')
                     ->placeholder('—'),
             ])
-            ->actions([
+            ->recordActions([
                 Action::make('view')
                     ->label('View')
                     ->icon('heroicon-m-eye')
@@ -138,7 +138,7 @@ class Timeline extends Page implements HasForms, HasTable
             ]);
     }
 
-    public function filterForm(Form $form): Form
+    public function filterForm(Schema $form): Schema
     {
         return $form
             ->schema([
