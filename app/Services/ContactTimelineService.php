@@ -152,7 +152,7 @@ class ContactTimelineService
                         ($task->assignee ? " • Assigned to: {$task->assignee->name}" : ''),
                 link: [
                     'label' => 'View Task',
-                    'url' => "/admin/tasks/{$task->id}",
+                    'url' => "/tasks/{$task->id}",
                 ],
                 metadata: [
                     'task_id' => $task->id,
@@ -208,7 +208,7 @@ class ContactTimelineService
                                 ($deal->product ? " • Product: {$deal->product->name}" : ''),
                         link: [
                             'label' => 'View Deal',
-                            'url' => "/admin/deals/{$deal->id}",
+                            'url' => "/deals/{$deal->id}",
                         ],
                         metadata: [
                             'deal_id' => $deal->id,
@@ -236,7 +236,7 @@ class ContactTimelineService
                             summary: 'Won amount: '.number_format($deal->won_amount ?? $deal->amount, 2)." {$deal->currency}",
                             link: [
                                 'label' => 'View Deal',
-                                'url' => "/admin/deals/{$deal->id}",
+                                'url' => "/deals/{$deal->id}",
                             ],
                             metadata: [
                                 'deal_id' => $deal->id,
@@ -262,7 +262,7 @@ class ContactTimelineService
                             summary: 'Lost reason: '.($deal->lost_reason ?? 'Not specified'),
                             link: [
                                 'label' => 'View Deal',
-                                'url' => "/admin/deals/{$deal->id}",
+                                'url' => "/deals/{$deal->id}",
                             ],
                             metadata: [
                                 'deal_id' => $deal->id,
@@ -306,7 +306,7 @@ class ContactTimelineService
                 summary: $this->formatActivitySummary($activity),
                 link: [
                     'label' => 'View Contact',
-                    'url' => "/admin/contacts/{$activity->subject_id}",
+                    'url' => "/contacts/{$activity->subject_id}",
                 ],
                 metadata: [
                     'activity_id' => $activity->id,

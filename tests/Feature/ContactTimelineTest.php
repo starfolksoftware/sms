@@ -22,7 +22,11 @@ class ContactTimelineTest extends TestCase
 
     public function test_timeline_aggregates_task_events(): void
     {
+        /** @var \App\Models\User $user */
         $user = User::factory()->create();
+        $user->assignRole('Admin'); 
+        $this->actingAs($user);
+        
         $contact = Contact::factory()->create();
         
         $task = Task::factory()->create([
