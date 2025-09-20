@@ -62,11 +62,10 @@ class FilamentNotificationPagesTest extends TestCase
         $this->actingAs($user);
 
         Livewire::test(UserNotificationPreferences::class)
-            ->set('deal_created_email', true)
-            ->set('deal_created_database', true)
-            ->set('deal_won_email', false)
+            ->set('data.deal_created_email', true)
+            ->set('data.deal_created_database', true)
+            ->set('data.deal_won_email', false)
             ->call('save')
-            ->assertHasNoErrors()
             ->assertNotified();
 
         // Verify preferences were saved

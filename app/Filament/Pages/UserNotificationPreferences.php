@@ -18,39 +18,24 @@ class UserNotificationPreferences extends Page
 
     protected static \UnitEnum|string|null $navigationGroup = 'Profile';
 
-    protected static ?int $navigationSort = 2;
+    public static ?int $navigationSort = 2;
 
-    protected string $view = 'filament.pages.user-notification-preferences';
+    public ?array $data = [];
 
-    // Form data properties
-    public bool $deal_created_email = false;
-
-    public bool $deal_created_database = true;
-
-    public bool $deal_stage_changed_email = false;
-
-    public bool $deal_stage_changed_database = true;
-
-    public bool $deal_won_email = false;
-
-    public bool $deal_won_database = true;
-
-    public bool $deal_lost_email = false;
-
-    public bool $deal_lost_database = true;
-
-    public bool $deal_assigned_email = true;
-
-    public bool $deal_assigned_database = true;
+    public function getView(): string
+    {
+        return 'filament.pages.user-notification-preferences';
+    }
 
     public function mount(): void
     {
-        $this->loadUserPreferences();
+        $this->data = $this->getDefaultData();
     }
 
-    protected function loadUserPreferences(): void
+    protected function getDefaultData(): array
     {
         $user = Auth::user();
+        $data = [];
 
         $events = [
             'deal_created',
@@ -61,17 +46,19 @@ class UserNotificationPreferences extends Page
         ];
 
         foreach ($events as $event) {
-            $this->{$event.'_email'} = UserNotificationPreference::isUserPreferenceEnabled(
+            $data[$event.'_email'] = UserNotificationPreference::isUserPreferenceEnabled(
                 $user->id,
                 $event,
                 'email'
             );
-            $this->{$event.'_database'} = UserNotificationPreference::isUserPreferenceEnabled(
+            $data[$event.'_database'] = UserNotificationPreference::isUserPreferenceEnabled(
                 $user->id,
                 $event,
                 'database'
             );
         }
+
+        return $data;
     }
 
     public function save(): void
@@ -92,14 +79,14 @@ class UserNotificationPreferences extends Page
                     $user->id,
                     $event,
                     'email',
-                    $this->{$event.'_email'}
+                    $this->data[$event.'_email'] ?? false
                 );
 
                 UserNotificationPreference::setUserPreference(
                     $user->id,
                     $event,
                     'database',
-                    $this->{$event.'_database'}
+                    $this->data[$event.'_database'] ?? false
                 );
             }
 
