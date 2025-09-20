@@ -11,9 +11,9 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
@@ -43,7 +43,7 @@ class DealStageResource extends Resource
                     ->required()
                     ->maxLength(255)
                     ->live(onBlur: true)
-                    ->afterStateUpdated(fn (string $operation, $state, \Filament\Forms\Set $set) => $operation === 'create' ? $set('slug', \Illuminate\Support\Str::slug($state)) : null),
+                    ->afterStateUpdated(fn (string $operation, $state, Set $set) => $operation === 'create' ? $set('slug', \Illuminate\Support\Str::slug($state)) : null),
 
                 Forms\Components\TextInput::make('slug')
                     ->required()
@@ -87,12 +87,14 @@ class DealStageResource extends Resource
                     ->numeric()
                     ->sortable(),
 
-                BadgeColumn::make('is_active')
+                TextColumn::make('is_active')
+                    ->badge()
                     ->label('Status')
                     ->getStateUsing(fn (DealStage $record) => $record->is_active ? 'Active' : 'Inactive')
                     ->color(fn (string $state) => $state === 'Active' ? 'success' : 'gray'),
 
-                BadgeColumn::make('type')
+                TextColumn::make('type')
+                    ->badge()
                     ->getStateUsing(function (DealStage $record) {
                         if ($record->is_winning_stage) {
                             return 'Winning';

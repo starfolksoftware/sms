@@ -24,6 +24,7 @@ class DealStageUITest extends TestCase
 
     public function test_admin_can_access_deal_stages_page(): void
     {
+        /** @var \Illuminate\Contracts\Auth\Authenticatable|mixed $user */
         $user = User::factory()->create();
         $user->assignRole('Admin');
 
@@ -35,6 +36,7 @@ class DealStageUITest extends TestCase
 
     public function test_non_admin_cannot_access_deal_stages_page(): void
     {
+        /** @var \Illuminate\Contracts\Auth\Authenticatable|mixed $user */
         $user = User::factory()->create();
         // User without manage_stages permission
 
@@ -45,6 +47,7 @@ class DealStageUITest extends TestCase
 
     public function test_can_create_new_deal_stage(): void
     {
+        /** @var \Illuminate\Contracts\Auth\Authenticatable|mixed $user */
         $user = User::factory()->create();
         $user->assignRole('Admin');
 
@@ -69,6 +72,7 @@ class DealStageUITest extends TestCase
 
     public function test_can_edit_deal_stage(): void
     {
+        /** @var \Illuminate\Contracts\Auth\Authenticatable|mixed $user */
         $user = User::factory()->create();
         $user->assignRole('Admin');
 
@@ -90,6 +94,7 @@ class DealStageUITest extends TestCase
 
     public function test_cannot_delete_stage_with_existing_deals(): void
     {
+        /** @var \Illuminate\Contracts\Auth\Authenticatable|mixed $user */
         $user = User::factory()->create();
         $user->assignRole('Admin');
 
@@ -106,7 +111,7 @@ class DealStageUITest extends TestCase
 
         Livewire::test(\App\Filament\Resources\DealStages\Pages\ManageDealStages::class)
             ->callAction('delete', $stage)
-            ->assertHasActionErrors();
+            ->assertHasFormErrors();
 
         // Stage should still exist
         $this->assertDatabaseHas('deal_stages', ['id' => $stage->id]);

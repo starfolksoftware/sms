@@ -62,7 +62,8 @@ class TasksRelationManager extends RelationManager
                 TextColumn::make('title')
                     ->searchable()
                     ->sortable(),
-                BadgeColumn::make('status')
+                TextColumn::make('status')
+                    ->badge()
                     ->formatStateUsing(fn (string $state): string => ucwords(str_replace('_', ' ', $state)))
                     ->colors([
                         'secondary' => 'pending',
