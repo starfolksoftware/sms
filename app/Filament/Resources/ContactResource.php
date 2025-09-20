@@ -157,6 +157,7 @@ class ContactResource extends Resource
             'create' => Pages\CreateContact::route('/create'),
             'view' => Pages\ViewContact::route('/{record}'),
             'edit' => Pages\EditContact::route('/{record}/edit'),
+            'timeline' => Pages\Timeline::route('/{record}/timeline'),
         ];
     }
 

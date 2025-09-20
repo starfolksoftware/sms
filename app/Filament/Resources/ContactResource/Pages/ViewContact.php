@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\ContactResource\Pages;
 
 use App\Filament\Resources\ContactResource;
-use App\Filament\Widgets\ContactTimelineWidget;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -14,19 +14,12 @@ class ViewContact extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('timeline')
+                ->label('View Timeline')
+                ->icon('heroicon-o-clock')
+                ->url(fn () => static::getResource()::getUrl('timeline', ['record' => $this->getRecord()]))
+                ->color('gray'),
             EditAction::make(),
         ];
-    }
-
-    protected function getFooterWidgets(): array
-    {
-        return [
-            ContactTimelineWidget::class,
-        ];
-    }
-
-    public function getFooterWidgetsColumns(): int|array
-    {
-        return 1;
     }
 }

@@ -3,77 +3,141 @@
 namespace App\Services;
 
 use App\DTOs\TimelineEventDTO;
+use App\DTOs\TimelineFilters;
+use App\DTOs\TimelinePageDTO;
 use App\Models\Contact;
 use App\Models\Deal;
 use App\Models\Task;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Spatie\Activitylog\Models\Activity;
 
 class ContactTimelineService
 {
-    public function getTimeline(
-        Contact $contact,
-        array $filters = [],
-        int $perPage = 15
-    ): LengthAwarePaginator {
-        $events = collect();
+    public function fetch(Contact $contact, TimelineFilters $filters): TimelinePageDTO
+    {
+        try {
+            $events = collect();
+            $warnings = [];
 
-        // Get events based on type filters
-        $types = $filters['types'] ?? ['tasks', 'deals', 'system'];
-        $dateFrom = isset($filters['date_from']) ? Carbon::parse($filters['date_from']) : null;
-        $dateTo = isset($filters['date_to']) ? Carbon::parse($filters['date_to']) : null;
+            // Validate user permissions
+            $user = Auth::user();
+            if (! $user || ! $user->can('view', $contact)) {
+                return TimelinePageDTO::empty();
+            }
 
-        if (in_array('tasks', $types)) {
-            $events = $events->merge($this->getTaskEvents($contact, $dateFrom, $dateTo));
+            // Fetch events from each source with error handling
+            if ($filters->hasType('tasks')) {
+                try {
+                    $taskEvents = $this->getTaskEvents($contact, $filters, $user);
+                    $events = $events->merge($taskEvents);
+                } catch (\Exception $e) {
+                    Log::error('Failed to fetch task events for timeline', [
+                        'contact_id' => $contact->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    $warnings[] = 'Some task events could not be loaded';
+                }
+            }
+
+            if ($filters->hasType('deals')) {
+                try {
+                    $dealEvents = $this->getDealEvents($contact, $filters, $user);
+                    $events = $events->merge($dealEvents);
+                } catch (\Exception $e) {
+                    Log::error('Failed to fetch deal events for timeline', [
+                        'contact_id' => $contact->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    $warnings[] = 'Some deal events could not be loaded';
+                }
+            }
+
+            if ($filters->hasType('system')) {
+                try {
+                    $systemEvents = $this->getSystemEvents($contact, $filters, $user);
+                    $events = $events->merge($systemEvents);
+                } catch (\Exception $e) {
+                    Log::error('Failed to fetch system events for timeline', [
+                        'contact_id' => $contact->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    $warnings[] = 'Some system events could not be loaded';
+                }
+            }
+
+            if ($filters->hasType('emails')) {
+                try {
+                    $emailEvents = $this->getEmailEvents($contact, $filters, $user);
+                    $events = $events->merge($emailEvents);
+                } catch (\Exception $e) {
+                    Log::error('Failed to fetch email events for timeline', [
+                        'contact_id' => $contact->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    $warnings[] = 'Some email events could not be loaded';
+                }
+            }
+
+            // Sort by timestamp descending (newest first)
+            $events = $events->sortByDesc('timestamp')->values();
+
+            // Apply cursor pagination
+            $paginatedResult = $this->applyCursorPagination($events, $filters);
+
+            return new TimelinePageDTO(
+                events: $paginatedResult['events'],
+                nextCursor: $paginatedResult['nextCursor'],
+                prevCursor: $paginatedResult['prevCursor'],
+                hasMore: $paginatedResult['hasMore'],
+                partial: ! empty($warnings),
+                warning: ! empty($warnings) ? implode(', ', $warnings) : null,
+                total: $events->count()
+            );
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch timeline for contact', [
+                'contact_id' => $contact->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return TimelinePageDTO::partial(
+                collect(),
+                'Timeline could not be loaded due to a system error'
+            );
         }
-
-        if (in_array('deals', $types)) {
-            $events = $events->merge($this->getDealEvents($contact, $dateFrom, $dateTo));
-        }
-
-        if (in_array('system', $types)) {
-            $events = $events->merge($this->getSystemEvents($contact, $dateFrom, $dateTo));
-        }
-
-        if (in_array('emails', $types)) {
-            $events = $events->merge($this->getEmailEvents($contact, $dateFrom, $dateTo));
-        }
-
-        // Sort by timestamp descending (newest first)
-        $events = $events->sortByDesc('timestamp')->values();
-
-        // Manual pagination
-        $currentPage = request()->get('page', 1);
-        $offset = ($currentPage - 1) * $perPage;
-        $items = $events->slice($offset, $perPage);
-
-        return new LengthAwarePaginator(
-            $items->values(),
-            $events->count(),
-            $perPage,
-            $currentPage,
-            [
-                'path' => request()->url(),
-                'pageName' => 'page',
-            ]
-        );
     }
 
-    private function getTaskEvents(Contact $contact, ?Carbon $dateFrom = null, ?Carbon $dateTo = null): Collection
+    private function getTaskEvents(Contact $contact, TimelineFilters $filters, User $user): Collection
     {
-        $query = Task::where('contact_id', $contact->id)
-            ->with(['assignee', 'creator']);
+        $query = Task::select(['id', 'title', 'status', 'assignee_id', 'creator_id', 'contact_id', 'created_at', 'updated_at'])
+            ->where('contact_id', $contact->id)
+            ->with(['assignee:id,name', 'creator:id,name']);
 
-        if ($dateFrom) {
-            $query->where('created_at', '>=', $dateFrom);
+        // Apply date filters with proper indexing
+        if ($filters->from) {
+            $query->where('created_at', '>=', $filters->from);
         }
-        if ($dateTo) {
-            $query->where('created_at', '<=', $dateTo);
+        if ($filters->to) {
+            $query->where('created_at', '<=', $filters->to);
         }
 
-        return $query->get()->map(function (Task $task) {
+        // Apply authorization filters
+        $query->whereHas('contact', function ($q) use ($user) {
+            $q->where(function ($q) use ($user) {
+                // Users can see tasks for contacts they can view
+                if ($user->can('viewAny', Task::class)) {
+                    return;
+                }
+                // Add additional permission logic if needed
+            });
+        });
+
+        return $query->get()->filter(function (Task $task) use ($user) {
+            return $user->can('view', $task);
+        })->map(function (Task $task) {
             return new TimelineEventDTO(
                 id: "task_{$task->id}_created",
                 type: 'task',
@@ -99,110 +163,133 @@ class ContactTimelineService
         });
     }
 
-    private function getDealEvents(Contact $contact, ?Carbon $dateFrom = null, ?Carbon $dateTo = null): Collection
+    private function getDealEvents(Contact $contact, TimelineFilters $filters, User $user): Collection
     {
         $events = collect();
 
-        // Get deal creation events
-        $query = Deal::where('contact_id', $contact->id)
-            ->with(['owner', 'product']);
+        $query = Deal::select(['id', 'title', 'amount', 'currency', 'status', 'owner_id', 'product_id', 'contact_id', 'created_at', 'closed_at', 'won_amount', 'lost_reason'])
+            ->where('contact_id', $contact->id)
+            ->with(['owner:id,name', 'product:id,name']);
 
-        if ($dateFrom) {
-            $query->where('created_at', '>=', $dateFrom);
+        // Apply date filters
+        if ($filters->from) {
+            $query->where(function ($q) use ($filters) {
+                $q->where('created_at', '>=', $filters->from)
+                    ->orWhere('closed_at', '>=', $filters->from);
+            });
         }
-        if ($dateTo) {
-            $query->where('created_at', '<=', $dateTo);
+        if ($filters->to) {
+            $query->where(function ($q) use ($filters) {
+                $q->where('created_at', '<=', $filters->to)
+                    ->orWhere('closed_at', '<=', $filters->to);
+            });
         }
 
-        $deals = $query->get();
+        $deals = $query->get()->filter(function (Deal $deal) use ($user) {
+            return $user->can('view', $deal);
+        });
 
         foreach ($deals as $deal) {
             // Deal created event
-            $events->push(new TimelineEventDTO(
-                id: "deal_{$deal->id}_created",
-                type: 'deal',
-                subtype: 'created',
-                timestamp: $deal->created_at,
-                actor: $deal->owner ? [
-                    'id' => $deal->owner->id,
-                    'name' => $deal->owner->name,
-                ] : null,
-                title: "Deal created: {$deal->title}",
-                summary: 'Amount: '.number_format($deal->amount, 2).
-                        " {$deal->currency}".
-                        ($deal->product ? " • Product: {$deal->product->name}" : ''),
-                link: [
-                    'label' => 'View Deal',
-                    'url' => "/admin/deals/{$deal->id}",
-                ],
-                metadata: [
-                    'deal_id' => $deal->id,
-                    'amount' => $deal->amount,
-                    'currency' => $deal->currency,
-                ]
-            ));
+            if (! $filters->from || $deal->created_at >= $filters->from) {
+                if (! $filters->to || $deal->created_at <= $filters->to) {
+                    $events->push(new TimelineEventDTO(
+                        id: "deal_{$deal->id}_created",
+                        type: 'deal',
+                        subtype: 'created',
+                        timestamp: $deal->created_at,
+                        actor: $deal->owner ? [
+                            'id' => $deal->owner->id,
+                            'name' => $deal->owner->name,
+                        ] : null,
+                        title: "Deal created: {$deal->title}",
+                        summary: 'Amount: '.number_format($deal->amount, 2).
+                                " {$deal->currency}".
+                                ($deal->product ? " • Product: {$deal->product->name}" : ''),
+                        link: [
+                            'label' => 'View Deal',
+                            'url' => "/admin/deals/{$deal->id}",
+                        ],
+                        metadata: [
+                            'deal_id' => $deal->id,
+                            'amount' => $deal->amount,
+                            'currency' => $deal->currency,
+                        ]
+                    ));
+                }
+            }
 
             // Deal won/lost events
             if ($deal->status === 'won' && $deal->closed_at) {
-                $events->push(new TimelineEventDTO(
-                    id: "deal_{$deal->id}_won",
-                    type: 'deal',
-                    subtype: 'won',
-                    timestamp: $deal->closed_at,
-                    actor: $deal->owner ? [
-                        'id' => $deal->owner->id,
-                        'name' => $deal->owner->name,
-                    ] : null,
-                    title: "Deal won: {$deal->title}",
-                    summary: 'Won amount: '.number_format($deal->won_amount ?? $deal->amount, 2)." {$deal->currency}",
-                    link: [
-                        'label' => 'View Deal',
-                        'url' => "/admin/deals/{$deal->id}",
-                    ],
-                    metadata: [
-                        'deal_id' => $deal->id,
-                        'won_amount' => $deal->won_amount,
-                        'original_amount' => $deal->amount,
-                    ]
-                ));
+                if (! $filters->from || $deal->closed_at >= $filters->from) {
+                    if (! $filters->to || $deal->closed_at <= $filters->to) {
+                        $events->push(new TimelineEventDTO(
+                            id: "deal_{$deal->id}_won",
+                            type: 'deal',
+                            subtype: 'won',
+                            timestamp: $deal->closed_at,
+                            actor: $deal->owner ? [
+                                'id' => $deal->owner->id,
+                                'name' => $deal->owner->name,
+                            ] : null,
+                            title: "Deal won: {$deal->title}",
+                            summary: 'Won amount: '.number_format($deal->won_amount ?? $deal->amount, 2)." {$deal->currency}",
+                            link: [
+                                'label' => 'View Deal',
+                                'url' => "/admin/deals/{$deal->id}",
+                            ],
+                            metadata: [
+                                'deal_id' => $deal->id,
+                                'won_amount' => $deal->won_amount,
+                                'original_amount' => $deal->amount,
+                            ]
+                        ));
+                    }
+                }
             } elseif ($deal->status === 'lost' && $deal->closed_at) {
-                $events->push(new TimelineEventDTO(
-                    id: "deal_{$deal->id}_lost",
-                    type: 'deal',
-                    subtype: 'lost',
-                    timestamp: $deal->closed_at,
-                    actor: $deal->owner ? [
-                        'id' => $deal->owner->id,
-                        'name' => $deal->owner->name,
-                    ] : null,
-                    title: "Deal lost: {$deal->title}",
-                    summary: 'Lost reason: '.($deal->lost_reason ?? 'Not specified'),
-                    link: [
-                        'label' => 'View Deal',
-                        'url' => "/admin/deals/{$deal->id}",
-                    ],
-                    metadata: [
-                        'deal_id' => $deal->id,
-                        'lost_reason' => $deal->lost_reason,
-                    ]
-                ));
+                if (! $filters->from || $deal->closed_at >= $filters->from) {
+                    if (! $filters->to || $deal->closed_at <= $filters->to) {
+                        $events->push(new TimelineEventDTO(
+                            id: "deal_{$deal->id}_lost",
+                            type: 'deal',
+                            subtype: 'lost',
+                            timestamp: $deal->closed_at,
+                            actor: $deal->owner ? [
+                                'id' => $deal->owner->id,
+                                'name' => $deal->owner->name,
+                            ] : null,
+                            title: "Deal lost: {$deal->title}",
+                            summary: 'Lost reason: '.($deal->lost_reason ?? 'Not specified'),
+                            link: [
+                                'label' => 'View Deal',
+                                'url' => "/admin/deals/{$deal->id}",
+                            ],
+                            metadata: [
+                                'deal_id' => $deal->id,
+                                'lost_reason' => $deal->lost_reason,
+                            ]
+                        ));
+                    }
+                }
             }
         }
 
         return $events;
     }
 
-    private function getSystemEvents(Contact $contact, ?Carbon $dateFrom = null, ?Carbon $dateTo = null): Collection
+    private function getSystemEvents(Contact $contact, TimelineFilters $filters, User $user): Collection
     {
-        $query = Activity::where('subject_type', Contact::class)
+        $query = Activity::select(['id', 'event', 'description', 'subject_type', 'subject_id', 'causer_type', 'causer_id', 'properties', 'created_at'])
+            ->where('subject_type', Contact::class)
             ->where('subject_id', $contact->id)
-            ->with('causer');
+            ->with('causer:id,name');
 
-        if ($dateFrom) {
-            $query->where('created_at', '>=', $dateFrom);
+        // Apply date filters
+        if ($filters->from) {
+            $query->where('created_at', '>=', $filters->from);
         }
-        if ($dateTo) {
-            $query->where('created_at', '<=', $dateTo);
+        if ($filters->to) {
+            $query->where('created_at', '<=', $filters->to);
         }
 
         return $query->get()->map(function (Activity $activity) {
@@ -230,16 +317,72 @@ class ContactTimelineService
         });
     }
 
-    private function getEmailEvents(Contact $contact, ?Carbon $dateFrom = null, ?Carbon $dateTo = null): Collection
+    private function getEmailEvents(Contact $contact, TimelineFilters $filters, User $user): Collection
     {
+        // Check if user has permission to view marketing data
+        if (! $user->hasPermissionTo('view_marketing')) {
+            return collect();
+        }
+
         // Placeholder for future email tracking implementation
         // When email tracking tables are created, this method will fetch:
         // - Email sent events
         // - Email opened events
         // - Email clicked events
         // - Email unsubscribed events
+        //
+        // Example implementation:
+        // $query = EmailEvent::where('contact_id', $contact->id)
+        //     ->select(['id', 'type', 'campaign_id', 'occurred_at', 'metadata'])
+        //     ->with('campaign:id,name');
+        //
+        // if ($filters->from) {
+        //     $query->where('occurred_at', '>=', $filters->from);
+        // }
+        // if ($filters->to) {
+        //     $query->where('occurred_at', '<=', $filters->to);
+        // }
 
         return collect();
+    }
+
+    private function applyCursorPagination(Collection $events, TimelineFilters $filters): array
+    {
+        $limit = $filters->limit;
+        $cursor = $filters->cursor;
+
+        if ($cursor) {
+            // Find the position based on cursor
+            $cursorTimestamp = Carbon::parse(base64_decode($cursor));
+            $position = $events->search(function (TimelineEventDTO $event) use ($cursorTimestamp) {
+                return $event->timestamp->equalTo($cursorTimestamp);
+            });
+
+            if ($position !== false) {
+                $events = $events->slice($position + 1);
+            }
+        }
+
+        $items = $events->take($limit);
+        $hasMore = $events->count() > $limit;
+
+        $nextCursor = null;
+        $prevCursor = null;
+
+        if ($hasMore && $items->isNotEmpty()) {
+            $nextCursor = base64_encode($items->last()->timestamp->toISOString());
+        }
+
+        if ($cursor && $items->isNotEmpty()) {
+            $prevCursor = base64_encode($items->first()->timestamp->toISOString());
+        }
+
+        return [
+            'events' => $items,
+            'nextCursor' => $nextCursor,
+            'prevCursor' => $prevCursor,
+            'hasMore' => $hasMore,
+        ];
     }
 
     private function formatActivitySummary(Activity $activity): ?string
@@ -262,5 +405,27 @@ class ContactTimelineService
         }
 
         return $changes ? implode(' • ', $changes) : null;
+    }
+
+    // Legacy method for backward compatibility
+    public function getTimeline(
+        Contact $contact,
+        array $filters = [],
+        int $perPage = 15
+    ) {
+        $timelineFilters = TimelineFilters::fromArray(array_merge($filters, ['limit' => $perPage]));
+        $result = $this->fetch($contact, $timelineFilters);
+
+        // Convert to legacy pagination format for existing widget
+        return new \Illuminate\Pagination\LengthAwarePaginator(
+            $result->events->values(),
+            $result->total,
+            $perPage,
+            request()->get('page', 1),
+            [
+                'path' => request()->url(),
+                'pageName' => 'page',
+            ]
+        );
     }
 }
