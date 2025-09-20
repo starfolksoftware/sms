@@ -41,6 +41,13 @@ class Timeline extends Page implements HasForms, HasTable
         'date_to' => null,
     ];
 
+    // Individual properties for form binding
+    public array $types = ['tasks', 'deals', 'system'];
+
+    public ?string $date_from = null;
+
+    public ?string $date_to = null;
+
     public function mount(int|string $record): void
     {
         $this->record = $this->resolveRecord($record);
@@ -51,25 +58,32 @@ class Timeline extends Page implements HasForms, HasTable
             'date_from' => request()->get('date_from'),
             'date_to' => request()->get('date_to'),
         ];
+
+        // Sync individual properties
+        $this->types = $this->timelineFilters['types'];
+        $this->date_from = $this->timelineFilters['date_from'];
+        $this->date_to = $this->timelineFilters['date_to'];
     }
 
     public function table(Table $table): Table
     {
-        $timelineService = new ContactTimelineService;
-
-        // Convert filters to TimelineFilters DTO
-        $filters = TimelineFilters::fromArray([
-            'types' => $this->timelineFilters['types'] ?? ['tasks', 'deals', 'system'],
-            'from' => $this->timelineFilters['date_from'] ? Carbon::parse($this->timelineFilters['date_from']) : null,
-            'to' => $this->timelineFilters['date_to'] ? Carbon::parse($this->timelineFilters['date_to']) : null,
-            'limit' => 25,
-        ]);
-
-        // Get timeline data
-        $timelineResult = $timelineService->fetch($this->record, $filters);
-
         return $table
-            ->records(fn () => $timelineResult->events->map(fn ($event) => $event->toArray())->toArray())
+            ->records(function () {
+                $timelineService = new ContactTimelineService;
+
+                // Convert filters to TimelineFilters DTO
+                $filters = TimelineFilters::fromArray([
+                    'types' => $this->types ?? ['tasks', 'deals', 'system'],
+                    'from' => $this->date_from ? Carbon::parse($this->date_from) : null,
+                    'to' => $this->date_to ? Carbon::parse($this->date_to) : null,
+                    'limit' => 25,
+                ]);
+
+                // Get timeline data and convert to arrays immediately
+                $timelineResult = $timelineService->fetch($this->record, $filters);
+
+                return $timelineResult->events->map(fn ($event) => $event->toArray())->toArray();
+            })
             ->paginated(false)
             ->columns([
                 TextColumn::make('when')
@@ -133,7 +147,16 @@ class Timeline extends Page implements HasForms, HasTable
                             'date_from' => null,
                             'date_to' => null,
                         ];
-                        $this->redirect(static::getUrl(['record' => $this->record]));
+                        $this->types = ['tasks', 'deals', 'system'];
+                        $this->date_from = null;
+                        $this->date_to = null;
+
+                        // Reset the form state as well
+                        $this->form->fill([
+                            'types' => ['tasks', 'deals', 'system'],
+                            'date_from' => null,
+                            'date_to' => null,
+                        ]);
                     }),
             ]);
     }
@@ -151,32 +174,32 @@ class Timeline extends Page implements HasForms, HasTable
                         'system' => 'System Events',
                         'emails' => 'Emails',
                     ])
-                    ->default($this->timelineFilters['types'] ?? ['tasks', 'deals', 'system'])
+                    ->default($this->types)
                     ->live()
-                    ->afterStateUpdated(fn (array $state) => $this->updateTimelineFilters(['types' => $state])),
+                    ->afterStateUpdated(function (array $state) {
+                        $this->types = $state;
+                        $this->timelineFilters['types'] = $state;
+                    }),
 
                 DatePicker::make('date_from')
                     ->label('From Date')
-                    ->default($this->timelineFilters['date_from'])
+                    ->default($this->date_from)
                     ->live()
-                    ->afterStateUpdated(fn (?string $state) => $this->updateTimelineFilters(['date_from' => $state])),
+                    ->afterStateUpdated(function (?string $state) {
+                        $this->date_from = $state;
+                        $this->timelineFilters['date_from'] = $state;
+                    }),
 
                 DatePicker::make('date_to')
                     ->label('To Date')
-                    ->default($this->timelineFilters['date_to'])
+                    ->default($this->date_to)
                     ->live()
-                    ->afterStateUpdated(fn (?string $state) => $this->updateTimelineFilters(['date_to' => $state])),
+                    ->afterStateUpdated(function (?string $state) {
+                        $this->date_to = $state;
+                        $this->timelineFilters['date_to'] = $state;
+                    }),
             ])
             ->columns(3);
-    }
-
-    public function updateTimelineFilters(array $filters): void
-    {
-        $this->timelineFilters = array_merge($this->timelineFilters, $filters);
-
-        // Update URL with new filters
-        $queryParams = array_filter($this->timelineFilters, fn ($value) => $value !== null && $value !== []);
-        $this->redirect(request()->fullUrlWithQuery($queryParams));
     }
 
     public static function getNavigationLabel(): string
