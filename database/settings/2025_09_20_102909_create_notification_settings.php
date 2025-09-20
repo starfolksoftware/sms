@@ -9,39 +9,39 @@ return new class extends SettingsMigration
     {
         $this->migrator->inGroup('notifications', function (SettingsBlueprint $blueprint): void {
             // Deal Created Settings
-            $blueprint->add('deal_created_enabled', true);
-            $blueprint->add('deal_created_roles', ['Sales Manager']);
-            $blueprint->add('deal_created_users', []);
-            $blueprint->add('deal_created_email_enabled', true);
-            $blueprint->add('deal_created_database_enabled', true);
+            $blueprint->add('dealCreatedEnabled', true);
+            $blueprint->add('dealCreatedRoles', ['Sales Manager']);
+            $blueprint->add('dealCreatedUsers', []);
+            $blueprint->add('dealCreatedEmailEnabled', true);
+            $blueprint->add('dealCreatedDatabaseEnabled', true);
 
             // Deal Stage Changed Settings
-            $blueprint->add('deal_stage_changed_enabled', true);
-            $blueprint->add('deal_stage_changed_roles', ['Sales Manager']);
-            $blueprint->add('deal_stage_changed_users', []);
-            $blueprint->add('deal_stage_changed_email_enabled', true);
-            $blueprint->add('deal_stage_changed_database_enabled', true);
+            $blueprint->add('dealStageChangedEnabled', true);
+            $blueprint->add('dealStageChangedRoles', ['Sales Manager']);
+            $blueprint->add('dealStageChangedUsers', []);
+            $blueprint->add('dealStageChangedEmailEnabled', true);
+            $blueprint->add('dealStageChangedDatabaseEnabled', true);
 
             // Deal Won Settings
-            $blueprint->add('deal_won_enabled', true);
-            $blueprint->add('deal_won_roles', ['Sales Manager', 'Admin']);
-            $blueprint->add('deal_won_users', []);
-            $blueprint->add('deal_won_email_enabled', true);
-            $blueprint->add('deal_won_database_enabled', true);
+            $blueprint->add('dealWonEnabled', true);
+            $blueprint->add('dealWonRoles', ['Sales Manager', 'Admin']);
+            $blueprint->add('dealWonUsers', []);
+            $blueprint->add('dealWonEmailEnabled', true);
+            $blueprint->add('dealWonDatabaseEnabled', true);
 
             // Deal Lost Settings
-            $blueprint->add('deal_lost_enabled', true);
-            $blueprint->add('deal_lost_roles', ['Sales Manager']);
-            $blueprint->add('deal_lost_users', []);
-            $blueprint->add('deal_lost_email_enabled', true);
-            $blueprint->add('deal_lost_database_enabled', true);
+            $blueprint->add('dealLostEnabled', true);
+            $blueprint->add('dealLostRoles', ['Sales Manager']);
+            $blueprint->add('dealLostUsers', []);
+            $blueprint->add('dealLostEmailEnabled', true);
+            $blueprint->add('dealLostDatabaseEnabled', true);
 
             // Deal Assigned Settings
-            $blueprint->add('deal_assigned_enabled', true);
-            $blueprint->add('deal_assigned_roles', []);
-            $blueprint->add('deal_assigned_users', []);
-            $blueprint->add('deal_assigned_email_enabled', true);
-            $blueprint->add('deal_assigned_database_enabled', true);
+            $blueprint->add('dealAssignedEnabled', true);
+            $blueprint->add('dealAssignedRoles', []);
+            $blueprint->add('dealAssignedUsers', []);
+            $blueprint->add('dealAssignedEmailEnabled', true);
+            $blueprint->add('dealAssignedDatabaseEnabled', true);
         });
     }
 };
