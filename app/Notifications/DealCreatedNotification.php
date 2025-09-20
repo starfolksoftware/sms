@@ -3,6 +3,8 @@
 namespace App\Notifications;
 
 use App\Models\Deal;
+use App\Notifications\Concerns\HasUserPreferences;
+use Filament\Actions\Action;
 use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -11,13 +13,13 @@ use Illuminate\Notifications\Notification;
 
 class DealCreatedNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use HasUserPreferences, Queueable;
 
     public function __construct(public Deal $deal) {}
 
-    public function via(object $notifiable): array
+    protected function getEventType(): string
     {
-        return ['mail', 'database'];
+        return 'deal_created';
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -31,7 +33,7 @@ class DealCreatedNotification extends Notification implements ShouldQueue
             ->line("Contact: {$this->deal->contact->name}")
             ->line('Amount: '.number_format($this->deal->amount, 2).' '.$this->deal->currency)
             ->line("Stage: {$this->deal->stage}")
-            ->line("Owner: " . ($this->deal->owner?->name ?? 'Unassigned'))
+            ->line('Owner: '.($this->deal->owner?->name ?? 'Unassigned'))
             ->action('View Deal', $url)
             ->line('Stay on top of your pipeline!');
     }
@@ -56,9 +58,19 @@ class DealCreatedNotification extends Notification implements ShouldQueue
             ->body("Deal '{$this->deal->title}' has been created for ".number_format($this->deal->amount, 2).' '.$this->deal->currency)
             ->success()
             ->actions([
-                \Filament\Notifications\Actions\Action::make('view')
+                Action::make('view')
                     ->label('View Deal')
                     ->url(route('filament.admin.resources.deals.view', $this->deal)),
             ]);
+    }
+
+    /**
+     * Store a Filament database notification payload.
+     *
+     * @return array<string, mixed>
+     */
+    public function toDatabase(object $notifiable): array
+    {
+        return $this->toFilament()->getDatabaseMessage();
     }
 }

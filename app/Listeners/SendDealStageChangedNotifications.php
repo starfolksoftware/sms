@@ -24,13 +24,7 @@ class SendDealStageChangedNotifications implements ShouldQueue
         // Get users to notify using the notification service
         $usersToNotify = $this->notificationService->getUsersForDealStageChanged($deal);
 
-        // Filter users based on their preferences
-        $usersToNotify = $this->notificationService->filterUsersByPreferences(
-            $usersToNotify, 
-            'deal_stage_changed'
-        );
-
-        // Send notifications
+        // Send notifications - let the notification's via() method handle channel selection
         if ($usersToNotify->isNotEmpty()) {
             Notification::send($usersToNotify, new DealStageChangedNotification($deal, $event->from, $event->to));
         }

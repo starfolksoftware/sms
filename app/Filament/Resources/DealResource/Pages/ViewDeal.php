@@ -50,24 +50,27 @@ class ViewDeal extends ViewRecord
                 ->color('info')
                 ->visible(fn (): bool => Gate::allows('changeStage', $this->record))
                 ->form([
-                    Forms\Components\Select::make('stage')
-                        ->options([
-                            'new' => 'New',
-                            'qualified' => 'Qualified',
-                            'proposal' => 'Proposal',
-                            'negotiation' => 'Negotiation',
-                            'closed' => 'Closed',
-                        ])
-                        ->default(fn () => $this->record->stage)
+                    Forms\Components\Select::make('deal_stage_id')
+                        ->label('Stage')
+                        ->options(fn () => \App\Models\DealStage::active()->ordered()->pluck('name', 'id'))
+                        ->searchable()
+                        ->preload()
+                        ->default(fn () => $this->record->deal_stage_id)
                         ->required(),
                 ])
                 ->action(function (array $data): void {
-                    $this->record->update(['stage' => $data['stage']]);
+                    $oldStage = $this->record->dealStage?->name ?? 'Unknown';
+                    $this->record->update(['deal_stage_id' => $data['deal_stage_id']]);
+                    $newStage = $this->record->fresh()->dealStage?->name ?? 'Unknown';
+
+                    // Dispatch stage changed event
+                    \App\Events\DealStageChanged::dispatch($this->record, $oldStage, $newStage);
+
                     Notification::make()
                         ->title('Stage changed successfully')
                         ->success()
                         ->send();
-                    $this->refreshFormData(['stage']);
+                    $this->refreshFormData(['deal_stage_id']);
                 }),
 
             Action::make('mark_won')
