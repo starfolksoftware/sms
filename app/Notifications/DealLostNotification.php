@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Deal;
+use App\Notifications\Concerns\HasUserPreferences;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Bus\Queueable;
@@ -12,13 +13,13 @@ use Illuminate\Notifications\Notification;
 
 class DealLostNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use HasUserPreferences, Queueable;
 
     public function __construct(public Deal $deal) {}
 
-    public function via(object $notifiable): array
+    protected function getEventType(): string
     {
-        return ['mail', 'database'];
+        return 'deal_lost';
     }
 
     public function toMail(object $notifiable): MailMessage

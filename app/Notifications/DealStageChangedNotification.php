@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Deal;
+use App\Notifications\Concerns\HasUserPreferences;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Bus\Queueable;
@@ -12,7 +13,7 @@ use Illuminate\Notifications\Notification;
 
 class DealStageChangedNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use HasUserPreferences, Queueable;
 
     public function __construct(
         public Deal $deal,
@@ -20,9 +21,9 @@ class DealStageChangedNotification extends Notification implements ShouldQueue
         public string $toStage
     ) {}
 
-    public function via(object $notifiable): array
+    protected function getEventType(): string
     {
-        return ['mail', 'database'];
+        return 'deal_stage_changed';
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -36,7 +37,7 @@ class DealStageChangedNotification extends Notification implements ShouldQueue
             ->line("Stage Change: {$this->fromStage} → {$this->toStage}")
             ->line("Contact: {$this->deal->contact->name}")
             ->line('Amount: '.number_format($this->deal->amount, 2).' '.$this->deal->currency)
-                ->line('Owner: ' . ($this->deal->owner?->name ?? 'Unassigned'))
+            ->line('Owner: '.($this->deal->owner?->name ?? 'Unassigned'))
             ->action('View Deal', $url)
             ->line('Keep the momentum going!');
     }
@@ -62,7 +63,7 @@ class DealStageChangedNotification extends Notification implements ShouldQueue
             ->body("Deal '{$this->deal->title}' moved from {$this->fromStage} to {$this->toStage}")
             ->info()
             ->actions([
-                    Action::make('view')
+                Action::make('view')
                     ->label('View Deal')
                     ->url(route('filament.admin.resources.deals.view', $this->deal)),
             ]);

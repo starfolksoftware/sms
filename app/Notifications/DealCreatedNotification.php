@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Deal;
+use App\Notifications\Concerns\HasUserPreferences;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Bus\Queueable;
@@ -12,13 +13,13 @@ use Illuminate\Notifications\Notification;
 
 class DealCreatedNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use HasUserPreferences, Queueable;
 
     public function __construct(public Deal $deal) {}
 
-    public function via(object $notifiable): array
+    protected function getEventType(): string
     {
-        return ['mail', 'database'];
+        return 'deal_created';
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -32,7 +33,7 @@ class DealCreatedNotification extends Notification implements ShouldQueue
             ->line("Contact: {$this->deal->contact->name}")
             ->line('Amount: '.number_format($this->deal->amount, 2).' '.$this->deal->currency)
             ->line("Stage: {$this->deal->stage}")
-            ->line("Owner: " . ($this->deal->owner?->name ?? 'Unassigned'))
+            ->line('Owner: '.($this->deal->owner?->name ?? 'Unassigned'))
             ->action('View Deal', $url)
             ->line('Stay on top of your pipeline!');
     }

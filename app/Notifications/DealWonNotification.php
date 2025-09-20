@@ -3,22 +3,23 @@
 namespace App\Notifications;
 
 use App\Models\Deal;
+use App\Notifications\Concerns\HasUserPreferences;
+use Filament\Actions\Action;
 use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use Filament\Actions\Action; // Added this line to import Action
 
 class DealWonNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use HasUserPreferences, Queueable;
 
     public function __construct(public Deal $deal) {}
 
-    public function via(object $notifiable): array
+    protected function getEventType(): string
     {
-        return ['mail', 'database'];
+        return 'deal_won';
     }
 
     public function toMail(object $notifiable): MailMessage
