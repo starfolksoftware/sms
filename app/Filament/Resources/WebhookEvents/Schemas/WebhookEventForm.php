@@ -2,12 +2,13 @@
 
 namespace App\Filament\Resources\WebhookEvents\Schemas;
 
+use Filament\Forms\Components\CodeEditor;
+use Filament\Forms\Components\CodeEditor\Enums\Language;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\JsonEditor;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class WebhookEventForm
@@ -55,8 +56,9 @@ class WebhookEventForm
 
                 Section::make('Payload')
                     ->components([
-                        JsonEditor::make('payload')
+                        CodeEditor::make('payload')
                             ->label('Raw Payload')
+                            ->language(Language::Json)
                             ->disabled()
                             ->columnSpanFull(),
                     ]),
